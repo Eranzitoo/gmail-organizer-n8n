@@ -1,0 +1,681 @@
+{
+  "name": "Gmail – Fase 1 – Diagnóstico (DRY RUN)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Gmail – Fase 1: Diagnóstico (DRY RUN)\n**Somente leitura.** A credencial Google OAuth2 usada nos nós HTTP deve ter APENAS o escopo `gmail.readonly`, então este workflow é tecnicamente incapaz de alterar a caixa.\n\n1. Ajuste o nó **Config** (comece com maxEmails = 200).\n2. Cole o ID da planilha nos dois nós do Google Sheets (abas `dados` e `relatorio`).\n3. **Enviar relatório** usa uma credencial separada com APENAS `gmail.send` (só envia, não lê nem altera). O destinatário é o seu próprio e-mail, obtido automaticamente.",
+        "width": 520,
+        "height": 260
+      },
+      "name": "Nota",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -260
+      ]
+    },
+    {
+      "parameters": {},
+      "name": "Iniciar diagnóstico",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "query",
+              "value": "-in:chats -in:drafts -in:sent",
+              "type": "string"
+            },
+            {
+              "id": "c2",
+              "name": "maxEmails",
+              "value": 200,
+              "type": "number"
+            },
+            {
+              "id": "c3",
+              "name": "bigSizeMB",
+              "value": 5,
+              "type": "number"
+            },
+            {
+              "id": "c4",
+              "name": "oldYears",
+              "value": 3,
+              "type": "number"
+            },
+            {
+              "id": "c5",
+              "name": "modo",
+              "value": "DRY_RUN",
+              "type": "string"
+            },
+            {
+              "id": "c6",
+              "name": "abaRelatorio",
+              "value": "=relatorio_{{ $now.setZone('America/Sao_Paulo').toFormat('yyyy-MM-dd_HH-mm') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/labels",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleOAuth2Api",
+        "options": {}
+      },
+      "name": "Listar labels",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        100
+      ],
+      "executeOnce": true,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $('Config').first().json.query }} has:attachment"
+            },
+            {
+              "name": "maxResults",
+              "value": "500"
+            }
+          ]
+        },
+        "options": {
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "qs",
+                    "name": "pageToken",
+                    "value": "={{ $response.body.nextPageToken }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !$response.body.nextPageToken }}",
+              "limitPagesFetched": true,
+              "maxRequests": 300,
+              "requestInterval": 200
+            }
+          }
+        }
+      },
+      "name": "Listar IDs com anexo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        100
+      ],
+      "executeOnce": true,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "jsCode": "// Junta todos os IDs de mensagens com anexo (todas as páginas) em um único item\nconst ids = [];\nfor (const item of $input.all()) {\n  for (const m of (item.json.messages || [])) ids.push(m.id);\n}\nreturn [{ json: { attachmentIds: ids, total: ids.length } }];\n"
+      },
+      "name": "Juntar IDs com anexo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $('Config').first().json.query }}"
+            },
+            {
+              "name": "maxResults",
+              "value": "500"
+            }
+          ]
+        },
+        "options": {
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "qs",
+                    "name": "pageToken",
+                    "value": "={{ $response.body.nextPageToken }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !$response.body.nextPageToken }}",
+              "limitPagesFetched": true,
+              "maxRequests": 300,
+              "requestInterval": 200
+            }
+          }
+        }
+      },
+      "name": "Listar mensagens",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1540,
+        100
+      ],
+      "executeOnce": true,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "messages",
+        "options": {}
+      },
+      "name": "Separar mensagens",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "maxItems": "={{ $('Config').first().json.maxEmails }}"
+      },
+      "name": "Limitar lote",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        1980,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://gmail.googleapis.com/gmail/v1/users/me/messages/{{ $json.id }}?format=metadata&metadataHeaders=From&metadataHeaders=To&metadataHeaders=Subject&metadataHeaders=Date&metadataHeaders=List-Unsubscribe&metadataHeaders=List-Id&metadataHeaders=Precedence&metadataHeaders=Auto-Submitted",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleOAuth2Api",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 10,
+              "batchInterval": 1100
+            }
+          }
+        }
+      },
+      "name": "Buscar metadados",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2200,
+        100
+      ],
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normaliza os metadados de cada e-mail. Somente leitura: nada é alterado no Gmail.\nconst labelsResp = $('Listar labels').first().json.labels || [];\nconst labelMap = Object.fromEntries(labelsResp.map(l => [l.id, l.name]));\nconst attachmentIds = new Set($('Juntar IDs com anexo').first().json.attachmentIds || []);\nconst cfg = $('Config').first().json;\nconst bigBytes = cfg.bigSizeMB * 1024 * 1024;\nconst oldMs = cfg.oldYears * 365.25 * 24 * 3600 * 1000;\nconst agora = Date.now();\n\nconst header = (headers, name) => {\n  const h = headers.find(x => (x.name || '').toLowerCase() === name.toLowerCase());\n  return h ? h.value : '';\n};\nconst parseFrom = (from) => {\n  const m = from.match(/^(.*?)\\s*<([^>]+)>\\s*$/);\n  const email = (m ? m[2] : from).trim().toLowerCase();\n  const nome = (m ? m[1] : '').replace(/^\"|\"$/g, '').trim();\n  return { nome, email };\n};\n// Mascara sequências de 6 a 8 dígitos (códigos de verificação) antes de gravar na planilha\nconst mascarar = (s) => String(s || '').replace(/\\b\\d{6,8}\\b/g, '••••••');\n\nconst out = [];\nfor (const item of $input.all()) {\n  const j = item.json;\n  if (!j.id || j.error) continue;\n  const headers = (j.payload && j.payload.headers) || [];\n  const { nome, email } = parseFrom(header(headers, 'From'));\n  const dominio = email.includes('@') ? email.split('@')[1] : '';\n  const ts = Number(j.internalDate);\n  const data = new Date(ts);\n  const labelIds = j.labelIds || [];\n  const labelsUsuario = labelIds.filter(id => id.startsWith('Label_')).map(id => labelMap[id] || id);\n  const categoriaGmail = (labelIds.find(id => id.startsWith('CATEGORY_')) || '').replace('CATEGORY_', '');\n  const listUnsub = header(headers, 'List-Unsubscribe');\n  const listId = header(headers, 'List-Id');\n  const precedence = header(headers, 'Precedence').toLowerCase();\n  const autoSub = header(headers, 'Auto-Submitted').toLowerCase();\n  const isNewsletter = !!(listUnsub || listId) || precedence === 'bulk' || precedence === 'list';\n  const isNoReply = /no-?reply|notifica|notification|alert|mailer-daemon|bounce/.test(email);\n  const temAnexo = attachmentIds.has(j.id);\n\n  out.push({ json: {\n    messageId: j.id,\n    threadId: j.threadId,\n    data: data.toISOString(),\n    ano: data.getFullYear(),\n    remetenteNome: nome,\n    remetenteEmail: email,\n    dominio,\n    destinatario: header(headers, 'To').slice(0, 200),\n    assunto: mascarar(header(headers, 'Subject')).slice(0, 300),\n    trecho: mascarar(j.snippet).slice(0, 200),\n    labels: labelIds.map(id => labelMap[id] || id).join(', '),\n    labelsUsuario: labelsUsuario.join(', '),\n    semLabelUsuario: labelsUsuario.length === 0,\n    categoriaGmail,\n    naInbox: labelIds.includes('INBOX'),\n    naoLido: labelIds.includes('UNREAD'),\n    temAnexo,\n    tamanhoMB: Math.round(((j.sizeEstimate || 0) / 1048576) * 100) / 100,\n    anexoGrande: temAnexo && (j.sizeEstimate || 0) >= bigBytes,\n    isNewsletter,\n    isAutomatico: isNoReply || (!!autoSub && autoSub !== 'no'),\n    temListUnsubscribe: !!listUnsub,\n    antigo: (agora - ts) > oldMs,\n    linkGmail: `https://mail.google.com/mail/u/0/#all/${j.threadId}`,\n    coletadoEm: new Date().toISOString(),\n  }});\n}\nreturn out;\n"
+      },
+      "name": "Normalizar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2420,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "COLE_AQUI_O_ID_DA_PLANILHA"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "dados"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "name": "Salvar diagnóstico",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2640,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Gera as tabelas do relatório de diagnóstico (uma linha por item, agrupadas por seção)\nconst rows = $input.all().map(i => i.json);\nconst geradoEm = new Date().toISOString();\nconst out = [];\nconst add = (secao, item, quantidade, detalhe = '') =>\n  out.push({ json: { geradoEm, secao, item: String(item), quantidade, detalhe } });\n\nconst contar = (lista, chaveFn) => {\n  const m = new Map();\n  for (const r of lista) {\n    for (const k of [].concat(chaveFn(r))) {\n      if (k === undefined || k === null || k === '') continue;\n      m.set(k, (m.get(k) || 0) + 1);\n    }\n  }\n  return [...m.entries()].sort((a, b) => b[1] - a[1]);\n};\nconst total = rows.length;\nconst pct = n => total ? ((n / total) * 100).toFixed(1) + '%' : '0%';\nconst nomes = {};\nfor (const r of rows) if (r.remetenteNome && !nomes[r.remetenteEmail]) nomes[r.remetenteEmail] = r.remetenteNome;\n\nconst resumo = {\n  'Total analisado': total,\n  'Na caixa de entrada': rows.filter(r => r.naInbox).length,\n  'Arquivados (fora da inbox)': rows.filter(r => !r.naInbox).length,\n  'Não lidos': rows.filter(r => r.naoLido).length,\n  'Sem label do usuário': rows.filter(r => r.semLabelUsuario).length,\n  'Newsletters / listas': rows.filter(r => r.isNewsletter).length,\n  'Notificações automáticas': rows.filter(r => r.isAutomatico && !r.isNewsletter).length,\n  'Com anexo': rows.filter(r => r.temAnexo).length,\n  'Com anexo grande': rows.filter(r => r.anexoGrande).length,\n  'Antigos': rows.filter(r => r.antigo).length,\n};\nfor (const [k, v] of Object.entries(resumo)) add('RESUMO', k, v, pct(v));\n\nfor (const [k, v] of contar(rows, r => r.remetenteEmail).slice(0, 30)) add('TOP_REMETENTES', k, v, nomes[k] || '');\nfor (const [k, v] of contar(rows, r => r.dominio).slice(0, 30)) add('TOP_DOMINIOS', k, v, pct(v));\nfor (const [k, v] of contar(rows, r => r.ano).sort((a, b) => b[0] - a[0])) add('POR_ANO', k, v, pct(v));\nfor (const [k, v] of contar(rows, r => r.labels ? r.labels.split(', ') : [])) add('POR_LABEL', k, v, pct(v));\nfor (const [k, v] of contar(rows, r => r.categoriaGmail || 'SEM_CATEGORIA')) add('POR_CATEGORIA_GMAIL', k, v, pct(v));\n\nconst news = rows.filter(r => r.isNewsletter);\nfor (const [k, v] of contar(news, r => r.remetenteEmail).slice(0, 25)) {\n  const naoLidos = news.filter(r => r.remetenteEmail === k && r.naoLido).length;\n  add('TOP_NEWSLETTERS', k, v, `${nomes[k] || ''} | não lidos: ${naoLidos}`);\n}\nconst notif = rows.filter(r => r.isAutomatico && !r.isNewsletter);\nfor (const [k, v] of contar(notif, r => r.remetenteEmail).slice(0, 25)) add('TOP_NOTIFICACOES', k, v, nomes[k] || '');\n\nconst antigos = rows.filter(r => r.antigo);\nfor (const [k, v] of contar(antigos, r => r.remetenteEmail).slice(0, 20)) add('ANTIGOS_POR_REMETENTE', k, v, nomes[k] || '');\n\nrows.filter(r => r.anexoGrande)\n  .sort((a, b) => b.tamanhoMB - a.tamanhoMB)\n  .slice(0, 30)\n  .forEach(r => add('ANEXOS_GRANDES', r.remetenteEmail, r.tamanhoMB, `${r.data.slice(0, 10)} | ${r.assunto}`));\n\nreturn out;\n"
+      },
+      "name": "Agregar relatório",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "COLE_AQUI_O_ID_DA_PLANILHA"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $('Config').first().json.abaRelatorio }}"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "name": "Salvar relatório",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        3300,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Monta o relatório em HTML (usado apenas se você ativar o nó de envio)\nconst itens = $input.all().map(i => i.json);\nconst titulos = {\n  RESUMO: 'Resumo', TOP_REMETENTES: 'Top 30 remetentes', TOP_DOMINIOS: 'Top domínios',\n  POR_ANO: 'E-mails por ano', POR_LABEL: 'E-mails por label', POR_CATEGORIA_GMAIL: 'Categorias do Gmail',\n  TOP_NEWSLETTERS: 'Principais newsletters', TOP_NOTIFICACOES: 'Principais notificações',\n  ANTIGOS_POR_REMETENTE: 'E-mails antigos por remetente', ANEXOS_GRANDES: 'Anexos grandes (MB)',\n};\nconst esc = s => String(s ?? '').replace(/[&<>\"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;' }[c]));\nconst secoes = {};\nfor (const i of itens) (secoes[i.secao] ||= []).push(i);\n\nconst quando = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });\nlet html = `<div style=\"font-family:Arial,sans-serif;font-size:13px\"><h2>Diagnóstico do Gmail (DRY RUN)</h2>`\n  + `<p>Gerado em ${quando}. Nenhuma alteração foi feita na caixa.</p>`;\nfor (const [sec, lista] of Object.entries(secoes)) {\n  html += `<h3>${titulos[sec] || sec}</h3><table border=\"1\" cellpadding=\"4\" cellspacing=\"0\" style=\"border-collapse:collapse\">`\n    + `<tr><th align=\"left\">Item</th><th>Qtd</th><th align=\"left\">Detalhe</th></tr>`;\n  for (const i of lista) html += `<tr><td>${esc(i.item)}</td><td align=\"right\">${esc(i.quantidade)}</td><td>${esc(i.detalhe)}</td></tr>`;\n  html += `</table>`;\n}\nhtml += `</div>`;\nreturn [{ json: { html, assunto: `[Gmail] Diagnóstico – ${new Date().toISOString().slice(0, 10)}` } }];\n"
+      },
+      "name": "Montar e-mail",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3300,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "COLE_AQUI_O_ID_DA_PLANILHA"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "dados"
+        },
+        "clear": "wholeSheet",
+        "keepFirstRow": true
+      },
+      "name": "Limpar aba dados",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        440,
+        100
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/profile",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleOAuth2Api",
+        "options": {}
+      },
+      "name": "Obter meu e-mail",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3520,
+        320
+      ],
+      "executeOnce": true,
+      "notes": "Credencial: Gmail Leitura (readonly)",
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "jsCode": "// Monta a mensagem MIME (RFC 2822) e codifica em base64url, formato exigido pela Gmail API\nconst to = $('Obter meu e-mail').first().json.emailAddress;\nconst { html, assunto } = $('Montar e-mail').first().json;\nconst b64 = s => Buffer.from(s, 'utf8').toString('base64');\nconst mime = [\n  `To: ${to}`,\n  `From: ${to}`,\n  `Subject: =?UTF-8?B?${b64(assunto)}?=`,\n  'MIME-Version: 1.0',\n  'Content-Type: text/html; charset=UTF-8',\n  'Content-Transfer-Encoding: base64',\n  '',\n  b64(html).replace(/.{76}/g, '$&\\r\\n'),\n].join('\\r\\n');\nconst raw = b64(mime).replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '');\nreturn [{ json: { para: to, raw } }];\n"
+      },
+      "name": "Codificar e-mail",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3740,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ raw: $json.raw }) }}",
+        "options": {}
+      },
+      "name": "Enviar relatório",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3960,
+        320
+      ],
+      "notes": "Credencial: Gmail Envio (somente envio) — escopo gmail.send",
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "COLE_AQUI_O_ID_DA_PLANILHA"
+        },
+        "title": "={{ $('Config').first().json.abaRelatorio }}",
+        "options": {}
+      },
+      "name": "Criar aba da execução",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2860,
+        120
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Repassa as linhas do relatório para gravação na aba recém-criada\nreturn $('Agregar relatório').all();\n"
+      },
+      "name": "Repassar linhas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3080,
+        120
+      ]
+    }
+  ],
+  "connections": {
+    "Iniciar diagnóstico": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Limpar aba dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Listar labels": {
+      "main": [
+        [
+          {
+            "node": "Listar IDs com anexo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Listar IDs com anexo": {
+      "main": [
+        [
+          {
+            "node": "Juntar IDs com anexo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Juntar IDs com anexo": {
+      "main": [
+        [
+          {
+            "node": "Listar mensagens",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Listar mensagens": {
+      "main": [
+        [
+          {
+            "node": "Separar mensagens",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Separar mensagens": {
+      "main": [
+        [
+          {
+            "node": "Limitar lote",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limitar lote": {
+      "main": [
+        [
+          {
+            "node": "Buscar metadados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar metadados": {
+      "main": [
+        [
+          {
+            "node": "Normalizar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar": {
+      "main": [
+        [
+          {
+            "node": "Salvar diagnóstico",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Agregar relatório",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agregar relatório": {
+      "main": [
+        [
+          {
+            "node": "Criar aba da execução",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Montar e-mail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar e-mail": {
+      "main": [
+        [
+          {
+            "node": "Obter meu e-mail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpar aba dados": {
+      "main": [
+        [
+          {
+            "node": "Listar labels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obter meu e-mail": {
+      "main": [
+        [
+          {
+            "node": "Codificar e-mail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Codificar e-mail": {
+      "main": [
+        [
+          {
+            "node": "Enviar relatório",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar aba da execução": {
+      "main": [
+        [
+          {
+            "node": "Repassar linhas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Repassar linhas": {
+      "main": [
+        [
+          {
+            "node": "Salvar relatório",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Sao_Paulo"
+  },
+  "pinData": {}
+}

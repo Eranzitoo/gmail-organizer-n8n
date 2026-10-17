@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Validar JSON dos workflows
+        run: for f in workflows/*.json; do node -e "JSON.parse(require('fs').readFileSync('$f','utf8'))" && echo "ok $f"; done
+      - name: Testes de segurança e lógica
+        run: npm test
+      - name: Código extraído está sincronizado com o workflow
+        run: |
+          npm run extract
+          git diff --exit-code src/ || (echo "Rode 'npm run extract' e faça commit de src/" && exit 1)

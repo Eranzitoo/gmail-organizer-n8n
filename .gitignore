@@ -1,0 +1,11 @@
+# Nunca versionar credenciais, exports de dados ou planilhas reais
+.env
+*.env
+credentials*.json
+client_secret*.json
+token*.json
+*.csv
+*.xlsx
+exports/
+node_modules/
+.DS_Store
