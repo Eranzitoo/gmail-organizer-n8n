@@ -61,8 +61,8 @@ Detalhes técnicos em [`docs/arquitetura.md`](docs/arquitetura.md) e no modelo d
 | Fase | Entrega | Escopo Gmail | Status |
 |---|---|---|---|
 | 1. Diagnóstico | Leitura completa, planilha e relatório por e-mail | `gmail.readonly` + `gmail.send` | ✅ Concluída |
-| 2. Classificação | Regras determinísticas + IA para ambíguos, auditoria em planilha, DRY RUN | `gmail.readonly` | 🔜 Próxima |
-| 3. Organização | Marcadores, arquivamento autorizado, quarentena em etapas | `gmail.modify` | ⏳ Planejada |
+| 2. Classificação | 15 regras determinísticas, auditoria em planilha, DRY RUN por padrão | `gmail.readonly` | 🧪 Em validação |
+| 3. Organização | Aplicação de marcadores via `batchModify` (só adiciona); arquivamento e quarentena em etapas | `gmail.modify` | 🧪 Em validação |
 | 4. Relatórios | Relatórios diário e semanal | `gmail.modify` | ⏳ Planejada |
 | 5. Manutenção | Rotina diária e workflow manual "Esvaziar quarentena" | `gmail.modify` | ⏳ Planejada |
 
@@ -95,15 +95,18 @@ O CI (GitHub Actions) valida a cada push que:
 ## Estrutura
 
 ```
-├── workflows/fase1-diagnostico.json   # workflow importável no n8n (fonte da verdade)
+├── workflows/
+│   ├── fase1-diagnostico.json         # diagnóstico somente leitura
+│   └── fase2-3-classificar-aplicar.json # classificação + aplicação de marcadores
 ├── src/code-nodes/                    # JS dos nós Code, legível para revisão
-├── tests/                             # testes de segurança e lógica
+├── tests/                             # testes de segurança e lógica (14)
 ├── scripts/extract-code-nodes.js      # sincroniza src/ a partir do JSON
 ├── docs/
 │   ├── playbook-fase1.pdf             # guia de implementação do zero
 │   ├── arquitetura.md                 # nó a nó, API, paginação, limites
 │   ├── seguranca.md                   # modelo de ameaças e escopos
-│   └── planilhas.md                   # esquema das planilhas
+│   ├── planilhas.md                   # esquema das planilhas
+│   └── regras.md                      # regras de classificação
 └── .github/workflows/ci.yml
 ```
 
