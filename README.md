@@ -117,5 +117,3 @@ n8n · Gmail API (REST) · Google OAuth 2.0 · Google Sheets API · JavaScript �
 ## Autor
 
 **Eric Andrey dos Santos** — Análise e Desenvolvimento de Sistemas · Segurança Cibernética · Pato Branco, PR — [LinkedIn](https://linkedin.com/in/Eranzito) · [GitHub](https://github.com/Eranzitoo)
-
-Desenvolvido com apoio do Claude (Anthropic) como par de engenharia.
