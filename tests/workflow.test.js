@@ -50,6 +50,7 @@ const refs = {
   'Listar labels': { labels: [{ id: 'Label_1', name: 'Bancos' }] },
   'Juntar IDs com anexo': { attachmentIds: ['a1'] },
   'Config': { bigSizeMB: 5, oldYears: 3 },
+  'Buscar metadados': mensagens,
 };
 
 test('Normalizar: extrai campos, mascara códigos e ignora erros', () => {
@@ -111,7 +112,7 @@ test('relatório: cobertura mostra corte do limite e falhas de leitura', () => {
     'Buscar metadados': mensagens,
   }).map(i => i.json);
   const cob = Object.fromEntries(agg.filter(r => r.secao === 'COBERTURA').map(r => [r.item, r.quantidade]));
-  assert.deepStrictEqual(cob, { 'Encontrados na busca': 5, 'Fora do limite maxEmails': 2, 'Falhas de leitura': 1, 'Analisados': 2 });
+  assert.deepStrictEqual(cob, { 'Encontrados na busca': 5, 'Fora do limite maxEmails': 2, 'Recuperadas na releitura': 0, 'Falhas de leitura': 1, 'Analisados': 2 });
   const html = run(code('Montar e-mail'), agg)[0].json.html;
   assert.match(html, /relatório parcial/);
   const max = byName('Config').parameters.assignments.assignments.find(a => a.name === 'maxEmails').value;
@@ -127,4 +128,33 @@ test('cota: Fase 1 e Fase 2/3 juntas ficam abaixo de 6.000 unidades/min', () => 
   const fase23 = require('../workflows/fase2-3-classificar-aplicar.json');
   const soma = unidadesPorMinuto(wf, 'Buscar metadados') + unidadesPorMinuto(fase23, 'Buscar metadados');
   assert.ok(soma < 5000, `leitura simultânea gastaria ${Math.round(soma)} unidades/min (limite 6.000, margem mínima 1.000)`);
+});
+
+test('leituras que falham são relidas após esperar a cota', () => {
+  const bom = (id, from) => ({ id, threadId: 't' + id, internalDate: String(now), labelIds: ['INBOX'],
+    payload: { headers: [{ name: 'From', value: from }] } });
+  const cota = { error: { message: '403 - Quota exceeded for quota metric Total Query Cost' } };
+  const lote = [{ id: 'x1' }, { id: 'x2' }, { id: 'x3' }];
+
+  const falhas = run(code('Separar falhas'), [bom('x1', 'a@a.com'), cota, cota], { 'Limitar lote': lote }).map(i => i.json);
+  assert.deepStrictEqual(falhas, [{ id: 'x2' }, { id: 'x3' }], 'o índice da falha precisa apontar para o id certo');
+  const nenhuma = run(code('Separar falhas'), [bom('x1', 'a@a.com')], { 'Limitar lote': [{ id: 'x1' }] }).map(i => i.json);
+  assert.deepStrictEqual(nenhuma, [{ semFalhas: true }]);
+
+  const relidas = [bom('x2', 'b@b.com'), cota];
+  const ctx = { ...refs, 'Buscar metadados': [bom('x1', 'a@a.com'), cota, cota], 'Reler falhas': relidas };
+  const norm = run(code('Normalizar'), [], ctx).map(i => i.json);
+  assert.deepStrictEqual(norm.map(r => r.messageId), ['x1', 'x2']);
+  const cob = Object.fromEntries(run(code('Agregar relatório'), norm, { ...ctx, 'Separar mensagens': lote, 'Limitar lote': lote })
+    .map(i => i.json).filter(r => r.secao === 'COBERTURA').map(r => [r.item, r.quantidade]));
+  assert.strictEqual(cob['Recuperadas na releitura'], 1);
+  assert.strictEqual(cob['Falhas de leitura'], 1);
+
+  const destino = (no, saida = 0) => wf.connections[no].main[saida].map(c => c.node);
+  assert.deepStrictEqual(destino('Há falhas?', 0), ['Esperar cota']);
+  assert.deepStrictEqual(destino('Há falhas?', 1), ['Normalizar']);
+  assert.deepStrictEqual(destino('Esperar cota'), ['Reler falhas']);
+  assert.deepStrictEqual(destino('Reler falhas'), ['Normalizar']);
+  const espera = byName('Esperar cota').parameters;
+  assert.ok(espera.unit === 'seconds' && espera.amount >= 60, 'precisa esperar a janela de 1 minuto da cota');
 });

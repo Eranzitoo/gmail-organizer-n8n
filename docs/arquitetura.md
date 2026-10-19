@@ -17,12 +17,16 @@ O nó Gmail nativo do n8n usa uma credencial que pede, entre outros, o escopo `h
 | 7 | Separar mensagens | Split Out | Um item por mensagem |
 | 8 | Limitar lote | Limit | Mais recentes primeiro |
 | 9 | Buscar metadados | `GET /users/me/messages/{id}?format=metadata` | Lotes de 10 a cada 1 s (~3.000 unidades/min), 5 tentativas, erro não interrompe e é contado no relatório |
-| 10 | Normalizar | Code | Extrai os campos e mascara números de 6 a 8 dígitos |
-| 11 | Salvar diagnóstico | Google Sheets (append, RAW) | `RAW` evita injeção de fórmulas vindas de assuntos |
-| 12 | Agregar relatório | Code | Gera linhas `secao / item / quantidade / detalhe` |
-| 13 | Salvar relatório | Google Sheets (append, RAW) | |
-| 14 | Montar e-mail | Code | HTML com escape de caracteres |
-| 15 | Enviar relatório | Gmail (send) | **Desativado** |
+| 10 | Separar falhas | Code | Liga cada leitura com erro ao seu id (pela ordem da resposta) |
+| 11 | Há falhas? | If | Sem falhas, segue direto para o Normalizar |
+| 12 | Esperar cota | Wait (65 s) | A cota do Gmail é por minuto; a espera libera a janela |
+| 13 | Reler falhas | `GET /users/me/messages/{id}?format=metadata` | Só os que falharam, mais devagar: lotes de 5 a cada 1,1 s |
+| 14 | Normalizar | Code | Junta 1ª passada e releitura, extrai os campos e mascara números de 6 a 8 dígitos |
+| 15 | Salvar diagnóstico | Google Sheets (append, RAW) | `RAW` evita injeção de fórmulas vindas de assuntos |
+| 16 | Agregar relatório | Code | Gera linhas `secao / item / quantidade / detalhe`, incluindo a Cobertura da leitura |
+| 17 | Salvar relatório | Google Sheets (append, RAW) | |
+| 18 | Montar e-mail | Code | HTML com estilos inline, escape de caracteres e alerta de relatório parcial |
+| 19 | Enviar relatório | Gmail (send) | **Desativado** |
 
 ## Decisões técnicas
 

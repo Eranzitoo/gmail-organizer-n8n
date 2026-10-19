@@ -37,9 +37,14 @@ const resumo = {
 // Sem isso, falhas de leitura somem em silêncio e o relatório parece completo sem ser.
 const encontrados = $('Separar mensagens').all().length;
 const dentroDoLimite = $('Limitar lote').all().length;
-const falhas = $('Buscar metadados').all().filter(i => !i.json.id || i.json.error).length;
+const ok = i => !!i.json.id && !i.json.error;
+let relidas = [];
+try { relidas = $('Reler falhas').all(); } catch (e) { /* sem falhas na primeira passada */ }
+const recuperadas = relidas.filter(ok).length;
+const falhas = dentroDoLimite - total; // o que não foi lido nem na primeira passada nem na releitura
 add('COBERTURA', 'Encontrados na busca', encontrados);
 add('COBERTURA', 'Fora do limite maxEmails', encontrados - dentroDoLimite, encontrados > dentroDoLimite ? 'aumente maxEmails no Config' : '');
+add('COBERTURA', 'Recuperadas na releitura', recuperadas, recuperadas ? 'falharam na 1ª passada e foram relidas após esperar a cota' : '');
 add('COBERTURA', 'Falhas de leitura', falhas, falhas ? 'não entram no relatório; rode de novo' : '');
 add('COBERTURA', 'Analisados', total, encontrados ? ((total / encontrados) * 100).toFixed(1) + '% do encontrado' : '');
 

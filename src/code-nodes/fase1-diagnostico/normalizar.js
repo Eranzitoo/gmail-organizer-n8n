@@ -21,8 +21,12 @@ const parseFrom = (from) => {
 // Mascara sequências de 6 a 8 dígitos (códigos de verificação) antes de gravar na planilha
 const mascarar = (s) => String(s || '').replace(/\b\d{6,8}\b/g, '••••••');
 
+// Junta a primeira passada com a releitura. "Reler falhas" só roda quando houve falha.
+let relidas = [];
+try { relidas = $('Reler falhas').all(); } catch (e) { /* sem falhas na primeira passada */ }
+
 const out = [];
-for (const item of $input.all()) {
+for (const item of [...$('Buscar metadados').all(), ...relidas]) {
   const j = item.json;
   if (!j.id || j.error) continue;
   const headers = (j.payload && j.payload.headers) || [];

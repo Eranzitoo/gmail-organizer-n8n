@@ -265,13 +265,13 @@
     },
     {
       "parameters": {
-        "jsCode": "// Normaliza os metadados de cada e-mail. Somente leitura: nada é alterado no Gmail.\nconst labelsResp = $('Listar labels').first().json.labels || [];\nconst labelMap = Object.fromEntries(labelsResp.map(l => [l.id, l.name]));\nconst attachmentIds = new Set($('Juntar IDs com anexo').first().json.attachmentIds || []);\nconst cfg = $('Config').first().json;\nconst bigBytes = cfg.bigSizeMB * 1024 * 1024;\nconst oldMs = cfg.oldYears * 365.25 * 24 * 3600 * 1000;\nconst agora = Date.now();\n\nconst header = (headers, name) => {\n  const h = headers.find(x => (x.name || '').toLowerCase() === name.toLowerCase());\n  return h ? h.value : '';\n};\nconst parseFrom = (from) => {\n  const m = from.match(/^(.*?)\\s*<([^>]+)>\\s*$/);\n  const email = (m ? m[2] : from).trim().toLowerCase();\n  const nome = (m ? m[1] : '').replace(/^\"|\"$/g, '').trim();\n  return { nome, email };\n};\n// Mascara sequências de 6 a 8 dígitos (códigos de verificação) antes de gravar na planilha\nconst mascarar = (s) => String(s || '').replace(/\\b\\d{6,8}\\b/g, '••••••');\n\nconst out = [];\nfor (const item of $input.all()) {\n  const j = item.json;\n  if (!j.id || j.error) continue;\n  const headers = (j.payload && j.payload.headers) || [];\n  const { nome, email } = parseFrom(header(headers, 'From'));\n  const dominio = email.includes('@') ? email.split('@')[1] : '';\n  const ts = Number(j.internalDate);\n  const data = new Date(ts);\n  const labelIds = j.labelIds || [];\n  const labelsUsuario = labelIds.filter(id => id.startsWith('Label_')).map(id => labelMap[id] || id);\n  const categoriaGmail = (labelIds.find(id => id.startsWith('CATEGORY_')) || '').replace('CATEGORY_', '');\n  const listUnsub = header(headers, 'List-Unsubscribe');\n  const listId = header(headers, 'List-Id');\n  const precedence = header(headers, 'Precedence').toLowerCase();\n  const autoSub = header(headers, 'Auto-Submitted').toLowerCase();\n  const isNewsletter = !!(listUnsub || listId) || precedence === 'bulk' || precedence === 'list';\n  const isNoReply = /no-?reply|notifica|notification|alert|mailer-daemon|bounce/.test(email);\n  const temAnexo = attachmentIds.has(j.id);\n\n  out.push({ json: {\n    messageId: j.id,\n    threadId: j.threadId,\n    data: data.toISOString(),\n    ano: data.getFullYear(),\n    remetenteNome: nome,\n    remetenteEmail: email,\n    dominio,\n    destinatario: header(headers, 'To').slice(0, 200),\n    assunto: mascarar(header(headers, 'Subject')).slice(0, 300),\n    trecho: mascarar(j.snippet).slice(0, 200),\n    labels: labelIds.map(id => labelMap[id] || id).join(', '),\n    labelsUsuario: labelsUsuario.join(', '),\n    semLabelUsuario: labelsUsuario.length === 0,\n    categoriaGmail,\n    naInbox: labelIds.includes('INBOX'),\n    naoLido: labelIds.includes('UNREAD'),\n    temAnexo,\n    tamanhoMB: Math.round(((j.sizeEstimate || 0) / 1048576) * 100) / 100,\n    anexoGrande: temAnexo && (j.sizeEstimate || 0) >= bigBytes,\n    isNewsletter,\n    isAutomatico: isNoReply || (!!autoSub && autoSub !== 'no'),\n    temListUnsubscribe: !!listUnsub,\n    antigo: (agora - ts) > oldMs,\n    linkGmail: `https://mail.google.com/mail/u/0/#all/${j.threadId}`,\n    coletadoEm: new Date().toISOString(),\n  }});\n}\nreturn out;\n"
+        "jsCode": "// Normaliza os metadados de cada e-mail. Somente leitura: nada é alterado no Gmail.\nconst labelsResp = $('Listar labels').first().json.labels || [];\nconst labelMap = Object.fromEntries(labelsResp.map(l => [l.id, l.name]));\nconst attachmentIds = new Set($('Juntar IDs com anexo').first().json.attachmentIds || []);\nconst cfg = $('Config').first().json;\nconst bigBytes = cfg.bigSizeMB * 1024 * 1024;\nconst oldMs = cfg.oldYears * 365.25 * 24 * 3600 * 1000;\nconst agora = Date.now();\n\nconst header = (headers, name) => {\n  const h = headers.find(x => (x.name || '').toLowerCase() === name.toLowerCase());\n  return h ? h.value : '';\n};\nconst parseFrom = (from) => {\n  const m = from.match(/^(.*?)\\s*<([^>]+)>\\s*$/);\n  const email = (m ? m[2] : from).trim().toLowerCase();\n  const nome = (m ? m[1] : '').replace(/^\"|\"$/g, '').trim();\n  return { nome, email };\n};\n// Mascara sequências de 6 a 8 dígitos (códigos de verificação) antes de gravar na planilha\nconst mascarar = (s) => String(s || '').replace(/\\b\\d{6,8}\\b/g, '••••••');\n\n// Junta a primeira passada com a releitura. \"Reler falhas\" só roda quando houve falha.\nlet relidas = [];\ntry { relidas = $('Reler falhas').all(); } catch (e) { /* sem falhas na primeira passada */ }\n\nconst out = [];\nfor (const item of [...$('Buscar metadados').all(), ...relidas]) {\n  const j = item.json;\n  if (!j.id || j.error) continue;\n  const headers = (j.payload && j.payload.headers) || [];\n  const { nome, email } = parseFrom(header(headers, 'From'));\n  const dominio = email.includes('@') ? email.split('@')[1] : '';\n  const ts = Number(j.internalDate);\n  const data = new Date(ts);\n  const labelIds = j.labelIds || [];\n  const labelsUsuario = labelIds.filter(id => id.startsWith('Label_')).map(id => labelMap[id] || id);\n  const categoriaGmail = (labelIds.find(id => id.startsWith('CATEGORY_')) || '').replace('CATEGORY_', '');\n  const listUnsub = header(headers, 'List-Unsubscribe');\n  const listId = header(headers, 'List-Id');\n  const precedence = header(headers, 'Precedence').toLowerCase();\n  const autoSub = header(headers, 'Auto-Submitted').toLowerCase();\n  const isNewsletter = !!(listUnsub || listId) || precedence === 'bulk' || precedence === 'list';\n  const isNoReply = /no-?reply|notifica|notification|alert|mailer-daemon|bounce/.test(email);\n  const temAnexo = attachmentIds.has(j.id);\n\n  out.push({ json: {\n    messageId: j.id,\n    threadId: j.threadId,\n    data: data.toISOString(),\n    ano: data.getFullYear(),\n    remetenteNome: nome,\n    remetenteEmail: email,\n    dominio,\n    destinatario: header(headers, 'To').slice(0, 200),\n    assunto: mascarar(header(headers, 'Subject')).slice(0, 300),\n    trecho: mascarar(j.snippet).slice(0, 200),\n    labels: labelIds.map(id => labelMap[id] || id).join(', '),\n    labelsUsuario: labelsUsuario.join(', '),\n    semLabelUsuario: labelsUsuario.length === 0,\n    categoriaGmail,\n    naInbox: labelIds.includes('INBOX'),\n    naoLido: labelIds.includes('UNREAD'),\n    temAnexo,\n    tamanhoMB: Math.round(((j.sizeEstimate || 0) / 1048576) * 100) / 100,\n    anexoGrande: temAnexo && (j.sizeEstimate || 0) >= bigBytes,\n    isNewsletter,\n    isAutomatico: isNoReply || (!!autoSub && autoSub !== 'no'),\n    temListUnsubscribe: !!listUnsub,\n    antigo: (agora - ts) > oldMs,\n    linkGmail: `https://mail.google.com/mail/u/0/#all/${j.threadId}`,\n    coletadoEm: new Date().toISOString(),\n  }});\n}\nreturn out;\n"
       },
       "name": "Normalizar",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2420,
+        3300,
         100
       ]
     },
@@ -302,19 +302,19 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
       "position": [
-        2640,
+        3520,
         -20
       ]
     },
     {
       "parameters": {
-        "jsCode": "// Gera as tabelas do relatório de diagnóstico (uma linha por item, agrupadas por seção)\nconst rows = $input.all().map(i => i.json);\nconst geradoEm = new Date().toISOString();\nconst out = [];\nconst add = (secao, item, quantidade, detalhe = '') =>\n  out.push({ json: { geradoEm, secao, item: String(item), quantidade, detalhe } });\n\nconst contar = (lista, chaveFn) => {\n  const m = new Map();\n  for (const r of lista) {\n    for (const k of [].concat(chaveFn(r))) {\n      if (k === undefined || k === null || k === '') continue;\n      m.set(k, (m.get(k) || 0) + 1);\n    }\n  }\n  return [...m.entries()].sort((a, b) => b[1] - a[1]);\n};\nconst total = rows.length;\nconst pct = n => total ? ((n / total) * 100).toFixed(1) + '%' : '0%';\nconst nomes = {};\nfor (const r of rows) if (r.remetenteNome && !nomes[r.remetenteEmail]) nomes[r.remetenteEmail] = r.remetenteNome;\n\nconst resumo = {\n  'Total analisado': total,\n  'Na caixa de entrada': rows.filter(r => r.naInbox).length,\n  'Arquivados (fora da inbox)': rows.filter(r => !r.naInbox).length,\n  'Não lidos': rows.filter(r => r.naoLido).length,\n  'Sem label do usuário': rows.filter(r => r.semLabelUsuario).length,\n  'Newsletters / listas': rows.filter(r => r.isNewsletter).length,\n  'Notificações automáticas': rows.filter(r => r.isAutomatico && !r.isNewsletter).length,\n  'Com anexo': rows.filter(r => r.temAnexo).length,\n  'Com anexo grande': rows.filter(r => r.anexoGrande).length,\n  'Antigos': rows.filter(r => r.antigo).length,\n};\n// Cobertura: quantos e-mails a busca encontrou, quantos o limite cortou e quantas leituras falharam.\n// Sem isso, falhas de leitura somem em silêncio e o relatório parece completo sem ser.\nconst encontrados = $('Separar mensagens').all().length;\nconst dentroDoLimite = $('Limitar lote').all().length;\nconst falhas = $('Buscar metadados').all().filter(i => !i.json.id || i.json.error).length;\nadd('COBERTURA', 'Encontrados na busca', encontrados);\nadd('COBERTURA', 'Fora do limite maxEmails', encontrados - dentroDoLimite, encontrados > dentroDoLimite ? 'aumente maxEmails no Config' : '');\nadd('COBERTURA', 'Falhas de leitura', falhas, falhas ? 'não entram no relatório; rode de novo' : '');\nadd('COBERTURA', 'Analisados', total, encontrados ? ((total / encontrados) * 100).toFixed(1) + '% do encontrado' : '');\n\nfor (const [k, v] of Object.entries(resumo)) add('RESUMO', k, v, pct(v));\n\nfor (const [k, v] of contar(rows, r => r.remetenteEmail).slice(0, 30)) add('TOP_REMETENTES', k, v, nomes[k] || '');\nfor (const [k, v] of contar(rows, r => r.dominio).slice(0, 30)) add('TOP_DOMINIOS', k, v, pct(v));\nfor (const [k, v] of contar(rows, r => r.ano).sort((a, b) => b[0] - a[0])) add('POR_ANO', k, v, pct(v));\nfor (const [k, v] of contar(rows, r => r.labels ? r.labels.split(', ') : [])) add('POR_LABEL', k, v, pct(v));\nfor (const [k, v] of contar(rows, r => r.categoriaGmail || 'SEM_CATEGORIA')) add('POR_CATEGORIA_GMAIL', k, v, pct(v));\n\nconst news = rows.filter(r => r.isNewsletter);\nfor (const [k, v] of contar(news, r => r.remetenteEmail).slice(0, 25)) {\n  const naoLidos = news.filter(r => r.remetenteEmail === k && r.naoLido).length;\n  add('TOP_NEWSLETTERS', k, v, `${nomes[k] || ''} | não lidos: ${naoLidos}`);\n}\nconst notif = rows.filter(r => r.isAutomatico && !r.isNewsletter);\nfor (const [k, v] of contar(notif, r => r.remetenteEmail).slice(0, 25)) add('TOP_NOTIFICACOES', k, v, nomes[k] || '');\n\nconst antigos = rows.filter(r => r.antigo);\nfor (const [k, v] of contar(antigos, r => r.remetenteEmail).slice(0, 20)) add('ANTIGOS_POR_REMETENTE', k, v, nomes[k] || '');\n\nrows.filter(r => r.anexoGrande)\n  .sort((a, b) => b.tamanhoMB - a.tamanhoMB)\n  .slice(0, 30)\n  .forEach(r => add('ANEXOS_GRANDES', r.remetenteEmail, r.tamanhoMB, `${r.data.slice(0, 10)} | ${r.assunto}`));\n\nreturn out;\n"
+        "jsCode": "// Gera as tabelas do relatório de diagnóstico (uma linha por item, agrupadas por seção)\nconst rows = $input.all().map(i => i.json);\nconst geradoEm = new Date().toISOString();\nconst out = [];\nconst add = (secao, item, quantidade, detalhe = '') =>\n  out.push({ json: { geradoEm, secao, item: String(item), quantidade, detalhe } });\n\nconst contar = (lista, chaveFn) => {\n  const m = new Map();\n  for (const r of lista) {\n    for (const k of [].concat(chaveFn(r))) {\n      if (k === undefined || k === null || k === '') continue;\n      m.set(k, (m.get(k) || 0) + 1);\n    }\n  }\n  return [...m.entries()].sort((a, b) => b[1] - a[1]);\n};\nconst total = rows.length;\nconst pct = n => total ? ((n / total) * 100).toFixed(1) + '%' : '0%';\nconst nomes = {};\nfor (const r of rows) if (r.remetenteNome && !nomes[r.remetenteEmail]) nomes[r.remetenteEmail] = r.remetenteNome;\n\nconst resumo = {\n  'Total analisado': total,\n  'Na caixa de entrada': rows.filter(r => r.naInbox).length,\n  'Arquivados (fora da inbox)': rows.filter(r => !r.naInbox).length,\n  'Não lidos': rows.filter(r => r.naoLido).length,\n  'Sem label do usuário': rows.filter(r => r.semLabelUsuario).length,\n  'Newsletters / listas': rows.filter(r => r.isNewsletter).length,\n  'Notificações automáticas': rows.filter(r => r.isAutomatico && !r.isNewsletter).length,\n  'Com anexo': rows.filter(r => r.temAnexo).length,\n  'Com anexo grande': rows.filter(r => r.anexoGrande).length,\n  'Antigos': rows.filter(r => r.antigo).length,\n};\n// Cobertura: quantos e-mails a busca encontrou, quantos o limite cortou e quantas leituras falharam.\n// Sem isso, falhas de leitura somem em silêncio e o relatório parece completo sem ser.\nconst encontrados = $('Separar mensagens').all().length;\nconst dentroDoLimite = $('Limitar lote').all().length;\nconst ok = i => !!i.json.id && !i.json.error;\nlet relidas = [];\ntry { relidas = $('Reler falhas').all(); } catch (e) { /* sem falhas na primeira passada */ }\nconst recuperadas = relidas.filter(ok).length;\nconst falhas = dentroDoLimite - total; // o que não foi lido nem na primeira passada nem na releitura\nadd('COBERTURA', 'Encontrados na busca', encontrados);\nadd('COBERTURA', 'Fora do limite maxEmails', encontrados - dentroDoLimite, encontrados > dentroDoLimite ? 'aumente maxEmails no Config' : '');\nadd('COBERTURA', 'Recuperadas na releitura', recuperadas, recuperadas ? 'falharam na 1ª passada e foram relidas após esperar a cota' : '');\nadd('COBERTURA', 'Falhas de leitura', falhas, falhas ? 'não entram no relatório; rode de novo' : '');\nadd('COBERTURA', 'Analisados', total, encontrados ? ((total / encontrados) * 100).toFixed(1) + '% do encontrado' : '');\n\nfor (const [k, v] of Object.entries(resumo)) add('RESUMO', k, v, pct(v));\n\nfor (const [k, v] of contar(rows, r => r.remetenteEmail).slice(0, 30)) add('TOP_REMETENTES', k, v, nomes[k] || '');\nfor (const [k, v] of contar(rows, r => r.dominio).slice(0, 30)) add('TOP_DOMINIOS', k, v, pct(v));\nfor (const [k, v] of contar(rows, r => r.ano).sort((a, b) => b[0] - a[0])) add('POR_ANO', k, v, pct(v));\nfor (const [k, v] of contar(rows, r => r.labels ? r.labels.split(', ') : [])) add('POR_LABEL', k, v, pct(v));\nfor (const [k, v] of contar(rows, r => r.categoriaGmail || 'SEM_CATEGORIA')) add('POR_CATEGORIA_GMAIL', k, v, pct(v));\n\nconst news = rows.filter(r => r.isNewsletter);\nfor (const [k, v] of contar(news, r => r.remetenteEmail).slice(0, 25)) {\n  const naoLidos = news.filter(r => r.remetenteEmail === k && r.naoLido).length;\n  add('TOP_NEWSLETTERS', k, v, `${nomes[k] || ''} | não lidos: ${naoLidos}`);\n}\nconst notif = rows.filter(r => r.isAutomatico && !r.isNewsletter);\nfor (const [k, v] of contar(notif, r => r.remetenteEmail).slice(0, 25)) add('TOP_NOTIFICACOES', k, v, nomes[k] || '');\n\nconst antigos = rows.filter(r => r.antigo);\nfor (const [k, v] of contar(antigos, r => r.remetenteEmail).slice(0, 20)) add('ANTIGOS_POR_REMETENTE', k, v, nomes[k] || '');\n\nrows.filter(r => r.anexoGrande)\n  .sort((a, b) => b.tamanhoMB - a.tamanhoMB)\n  .slice(0, 30)\n  .forEach(r => add('ANEXOS_GRANDES', r.remetenteEmail, r.tamanhoMB, `${r.data.slice(0, 10)} | ${r.assunto}`));\n\nreturn out;\n"
       },
       "name": "Agregar relatório",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2640,
+        3520,
         220
       ]
     },
@@ -345,7 +345,7 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
       "position": [
-        3300,
+        4180,
         120
       ]
     },
@@ -357,7 +357,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3300,
+        4180,
         320
       ]
     },
@@ -397,7 +397,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        3520,
+        4400,
         320
       ],
       "executeOnce": true,
@@ -414,7 +414,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3740,
+        4620,
         320
       ]
     },
@@ -433,7 +433,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        3960,
+        4840,
         320
       ],
       "notes": "Credencial: Gmail Envio (somente envio) — escopo gmail.send",
@@ -456,7 +456,7 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
       "position": [
-        2860,
+        3740,
         120
       ],
       "executeOnce": true
@@ -469,9 +469,95 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3080,
+        3960,
         120
       ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Separa as leituras que falharam (ex.: cota de 6.000 unidades/min estourada) para uma segunda tentativa.\n// O HTTP Request devolve as respostas na mesma ordem da entrada, então o índice liga cada falha ao seu id.\nconst entrada = $('Limitar lote').all();\nconst falhas = $input.all()\n  .map((item, i) => ({ ok: !!item.json.id && !item.json.error, id: entrada[i] && entrada[i].json.id }))\n  .filter(r => !r.ok && r.id)\n  .map(r => ({ json: { id: r.id } }));\nreturn falhas.length ? falhas : [{ json: { semFalhas: true } }];\n"
+      },
+      "name": "Separar falhas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2420,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "tem-falha",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "Há falhas?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2640,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 65,
+        "unit": "seconds"
+      },
+      "name": "Esperar cota",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2860,
+        240
+      ],
+      "notes": "A cota do Gmail é por minuto: esperar 65 s libera a janela antes de reler."
+    },
+    {
+      "parameters": {
+        "url": "=https://gmail.googleapis.com/gmail/v1/users/me/messages/{{ $json.id }}?format=metadata&metadataHeaders=From&metadataHeaders=To&metadataHeaders=Subject&metadataHeaders=Date&metadataHeaders=List-Unsubscribe&metadataHeaders=List-Id&metadataHeaders=Precedence&metadataHeaders=Auto-Submitted",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleOAuth2Api",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 5,
+              "batchInterval": 1100
+            }
+          }
+        }
+      },
+      "name": "Reler falhas",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3080,
+        240
+      ],
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput",
+      "notes": "Segunda tentativa, mais lenta, só para as leituras que falharam na primeira passada."
     }
   ],
   "connections": {
@@ -567,7 +653,7 @@
       "main": [
         [
           {
-            "node": "Normalizar",
+            "node": "Separar falhas",
             "type": "main",
             "index": 0
           }
@@ -666,6 +752,57 @@
         [
           {
             "node": "Salvar relatório",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Separar falhas": {
+      "main": [
+        [
+          {
+            "node": "Há falhas?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Há falhas?": {
+      "main": [
+        [
+          {
+            "node": "Esperar cota",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Normalizar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Esperar cota": {
+      "main": [
+        [
+          {
+            "node": "Reler falhas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reler falhas": {
+      "main": [
+        [
+          {
+            "node": "Normalizar",
             "type": "main",
             "index": 0
           }
