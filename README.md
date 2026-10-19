@@ -3,7 +3,8 @@
 ![CI](https://github.com/Eranzitoo/gmail-organizer-n8n/actions/workflows/ci.yml/badge.svg)
 ![n8n](https://img.shields.io/badge/n8n-workflow-EA4B71)
 ![Gmail API](https://img.shields.io/badge/Gmail%20API-readonly-0F766E)
-![Status](https://img.shields.io/badge/fase%201-concluída-success)
+![Fase 1](https://img.shields.io/badge/fase%201-concluída-success)
+![Fase 2/3](https://img.shields.io/badge/fase%202%2F3-em%20validação-yellow)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
 Automação no **n8n** para diagnosticar, organizar e gerar relatórios de uma caixa **Gmail pessoal** com milhares de e-mails acumulados. O princípio central é **segurança por design**: nada é excluído automaticamente, e cada fase usa a menor permissão possível.
@@ -112,7 +113,25 @@ O CI (GitHub Actions) valida a cada push que:
 
 ## Stack
 
-n8n · Gmail API (REST) · Google OAuth 2.0 · Google Sheets API · JavaScript · GitHub Actions
+<p>
+  <img alt="n8n" src="https://img.shields.io/badge/n8n-EA4B71?style=for-the-badge&logo=n8n&logoColor=white">
+  <img alt="Gmail API" src="https://img.shields.io/badge/Gmail_API-EA4335?style=for-the-badge&logo=gmail&logoColor=white">
+  <img alt="Google OAuth 2.0" src="https://img.shields.io/badge/OAuth_2.0-4285F4?style=for-the-badge&logo=google&logoColor=white">
+  <img alt="Google Sheets API" src="https://img.shields.io/badge/Google_Sheets-34A853?style=for-the-badge&logo=googlesheets&logoColor=white">
+  <img alt="JavaScript" src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black">
+  <img alt="Node.js" src="https://img.shields.io/badge/Node.js_test-5FA04E?style=for-the-badge&logo=nodedotjs&logoColor=white">
+  <img alt="GitHub Actions" src="https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white">
+</p>
+
+| Tecnologia | Papel no projeto |
+|---|---|
+| **n8n** (self-hosted) | Orquestração dos workflows |
+| **Gmail API (REST)** | Leitura, envio do relatório e aplicação de marcadores, cada um com escopo próprio |
+| **Google OAuth 2.0** | Credenciais separadas por escopo (`readonly`, `send`, `modify`) |
+| **Google Sheets API** | Relatórios de diagnóstico e trilha de auditoria |
+| **JavaScript** | Lógica dos nós Code: normalização, classificação e agregação |
+| **Node.js `node --test`** | Testes de segurança e lógica, sem dependências |
+| **GitHub Actions** | CI: valida o JSON, roda os testes e confere a sincronia de `src/` |
 
 ## Autor
 
