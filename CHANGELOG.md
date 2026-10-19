@@ -4,7 +4,8 @@
 ### Adicionado
 - Workflow `fase2-3-classificar-aplicar.json`: 15 regras determinísticas (protegidas primeiro), auditoria completa na aba `auditoria`, modo DRY_RUN por padrão e aplicação de marcadores via `messages.batchModify` (só `addLabelIds`).
 - Processamento incremental: cada execução pega até 200 e-mails ainda sem marcador.
-- 7 testes novos: único POST é `batchModify`, sem `removeLabelIds`, nenhuma regra usa a quarentena, regras protegidas vencem promoções, mascaramento de códigos e comportamento DRY_RUN.
+- 8 regras adicionais após a validação em DRY_RUN, reduzindo os e-mails sem regra: bancos (Bybit, InfinitePay), faturas da Vivo, alertas do Asaas, Celepar, estágio e processos seletivos (CIEE, Greenhouse), alertas de vagas, newsletters de design e promoções diversas.
+- 9 testes novos: único POST é `batchModify`, sem `removeLabelIds`, nenhuma regra usa a quarentena, regras protegidas vencem promoções, mascaramento de códigos e comportamento DRY_RUN, regras protegidas no topo da lista e cobertura das novas regras.
 - Documentação das regras em `docs/regras.md`.
 
 ## [0.3.1] - 2026-10-15

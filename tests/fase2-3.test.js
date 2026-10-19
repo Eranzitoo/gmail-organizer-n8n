@@ -15,7 +15,7 @@ const LABELS = [
   '00-INBOX-ZERO/03-REVISAR', '10-PESSOAL/Documentos', '10-PESSOAL/Saúde', '30-NEWSLETTERS/Ler-depois',
   '30-NEWSLETTERS/Promoções', '40-NOTIFICACOES/Redes sociais', '40-NOTIFICACOES/Ferramentas',
   '40-NOTIFICACOES/Sistemas', '50-FINANCEIRO/Faturas', '60-SEGURANCA/Alertas', '60-SEGURANCA/Login',
-  '60-SEGURANCA/Recuperacao', '99-REVISAR-EXCLUSAO',
+  '60-SEGURANCA/Recuperacao', '99-REVISAR-EXCLUSAO', '50-FINANCEIRO/Bancos', '20-TRABALHO/Projetos',
 ].map((name, i) => ({ id: `Label_${i + 10}`, name }));
 
 const msg = (id, from, subject, labelIds = ['INBOX'], extra = []) => ({
@@ -96,4 +96,36 @@ test('marcador inexistente vira erro na auditoria e não é aplicado', () => {
   assert.match(x.status, /^ERRO/);
   const grupos = run(code('Agrupar por marcador'), [], { Config: { modo: 'APLICAR' }, Classificar: [x] });
   assert.strictEqual(grupos.length, 0);
+});
+
+test('segurança: regras protegidas ficam no topo da lista', () => {
+  const recs = [...code('Classificar').matchAll(/R\('[^']+', '[^']+', '([A-Z]+)'/g)].map(m => m[1]);
+  const ultimaProtegida = recs.lastIndexOf('PROTEGIDO');
+  assert.ok(ultimaProtegida >= 0, 'nenhuma regra protegida encontrada');
+  assert.ok(recs.slice(0, ultimaProtegida).every(r => r === 'PROTEGIDO'), `regra comum antes de protegida: ${recs}`);
+});
+
+test('pendências: bancos, vagas, estágio e marketing classificados', () => {
+  const promo = ['INBOX', 'CATEGORY_PROMOTIONS'];
+  const r = Object.fromEntries(classificar([
+    msg('bybit', 'Bybit <noreply@mail.bybit.com>', 'Oferta exclusiva', promo, unsub),
+    msg('asaas', 'Asaas <no-reply@security.asaas.com>', 'Novo acesso', promo, unsub),
+    msg('vivo', 'Vivo <conta@vivo.com.br>', 'Sua conta chegou'),
+    msg('vivoMkt', 'Vivo <ofertas@mail.vivo.com.br>', 'Planos', promo, unsub),
+    msg('ciee', 'CIEE <vagas@cieepr.org.br>', 'Vagas de estágio', promo, unsub),
+    msg('catho', 'Catho <vagas@catho.com.br>', 'Novas vagas para você', promo, unsub),
+    msg('afyaMkt', 'Afya <contato@afya.com.br>', 'Inscrições abertas', promo, unsub),
+    msg('afyaCob', 'Afya <cobranca@afya.com.br>', 'Mensalidade'),
+  ]).map(x => [x.messageId, x]));
+  assert.strictEqual(r.bybit.labelSugerido, '50-FINANCEIRO/Bancos');
+  assert.strictEqual(r.bybit.recomendacao, 'PROTEGIDO');
+  assert.strictEqual(r.asaas.labelSugerido, '60-SEGURANCA/Alertas');
+  assert.strictEqual(r.vivo.labelSugerido, '50-FINANCEIRO/Faturas');
+  assert.strictEqual(r.vivoMkt.labelSugerido, '30-NEWSLETTERS/Promoções');
+  assert.strictEqual(r.ciee.labelSugerido, '20-TRABALHO/Projetos');
+  assert.strictEqual(r.ciee.recomendacao, 'PROTEGIDO');
+  assert.strictEqual(r.catho.labelSugerido, '30-NEWSLETTERS/Ler-depois');
+  assert.strictEqual(r.afyaMkt.labelSugerido, '30-NEWSLETTERS/Promoções');
+  assert.strictEqual(r.afyaCob.labelSugerido, '50-FINANCEIRO/Faturas');
+  assert.ok(Object.values(r).every(x => x.status === 'SIMULADO'), 'algum marcador não existe na lista de teste');
 });
