@@ -84,7 +84,7 @@ for (const { json: j } of $input.all()) {
     regraId: regra.id,
     acaoSugerida: 'ADICIONAR_LABEL',
     acaoExecutada: !labelId ? 'NENHUMA' : aplicar ? 'ADICIONAR_LABEL' : 'NENHUMA (DRY_RUN)',
-    status: !labelId ? 'ERRO: marcador não existe no Gmail' : aplicar ? 'ENVIADO' : 'SIMULADO',
+    status: !labelId ? 'ERRO: marcador não existe no Gmail' : aplicar ? 'PENDENTE' : 'SIMULADO',
     linkGmail: `https://mail.google.com/mail/u/0/#all/${j.threadId}`,
   }});
 }

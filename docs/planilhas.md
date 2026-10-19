@@ -33,6 +33,14 @@ Duas abas com as mesmas colunas (podem ficar na mesma planilha do diagnóstico o
 
 Colunas:
 
-`timestamp, execucaoId, modo (DRY_RUN/APLICAR), messageId, threadId, remetente, dominio, assunto, dataEmail, labelsAntes, categoria, labelSugerido, labelId, recomendacao (MANTER/REVISAR/PROTEGIDO), confianca (ALTA/MEDIA/BAIXA), origemDecisao (REGRA), regraId, acaoSugerida, acaoExecutada, status (SIMULADO/ENVIADO/ERRO), linkGmail`
+`timestamp, execucaoId, modo (DRY_RUN/APLICAR), messageId, threadId, remetente, dominio, assunto, dataEmail, labelsAntes, categoria, labelSugerido, labelId, recomendacao (MANTER/REVISAR/PROTEGIDO), confianca (ALTA/MEDIA/BAIXA), origemDecisao (REGRA), regraId, acaoSugerida, acaoExecutada, status (SIMULADO/PENDENTE/ERRO), linkGmail`
+
+No modo APLICAR o status fica `PENDENTE`: a linha registra a intenção, não a confirmação.
+
+**Aba `aplicacoes`** (só no modo APLICAR, nunca é limpa): uma linha por chamada ao `batchModify`, com o que o Gmail de fato confirmou.
+
+`timestamp, execucaoId, label, labelId, total, status (CONFIRMADO/ERRO), erro, messageIds`
+
+Para saber se um e-mail foi marcado, cruze `execucaoId` + `labelId` da `auditoria` com a `aplicacoes`.
 
 O cabeçalho é criado na primeira execução. Para ver os domínios sem regra: `=QUERY(simulacao!A:Q; "select G, count(G) where Q = 'PADRAO' group by G order by count(G) desc"; 1)`.

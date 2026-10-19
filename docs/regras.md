@@ -34,6 +34,7 @@ Regras determinísticas derivadas do diagnóstico de 3.070 e-mails. A **primeira
 - Nenhuma regra aponta para `99-REVISAR-EXCLUSAO`. A quarentena só entra na Etapa A, após revisão.
 - O workflow **só adiciona** marcadores (`addLabelIds`): não arquiva, não marca como lido e não exclui.
 - Em DRY_RUN o resultado vai para a aba `simulacao`, limpa a cada execução; a aba `auditoria` só recebe ações reais e nunca é limpa.
+- No APLICAR, a `auditoria` registra a intenção (`PENDENTE`) e a aba `aplicacoes` registra a resposta do Gmail (`CONFIRMADO` ou `ERRO`); uma falha de credencial não deixa registro falso de sucesso.
 - As regras protegidas ficam sempre no topo da lista (verificado por teste).
 - Cada execução processa no máximo 200 e-mails sem marcador (`has:nouserlabels`), em DRY_RUN por padrão.
 - Todas essas garantias são verificadas por testes no CI.

@@ -142,3 +142,22 @@ test('segurança: auditoria nunca é limpa; DRY_RUN grava só na aba simulacao',
   assert.strictEqual(destino('APLICAR'), 'auditoria');
   assert.strictEqual(destino('QUALQUER_OUTRO'), 'simulacao', 'modo desconhecido não pode gravar na auditoria');
 });
+
+test('auditoria: APLICAR registra PENDENTE e só a confirmação do Gmail vira CONFIRMADO', () => {
+  const [x] = classificar([msg('1', 'a@shopee.com.br', 'x')], 'APLICAR');
+  assert.strictEqual(x.status, 'PENDENTE', 'a auditoria não pode afirmar que aplicou antes da resposta do Gmail');
+  assert.strictEqual(byName('Aplicar marcadores').onError, 'continueRegularOutput', 'falha precisa chegar ao registro');
+  const grupos = [
+    { labelId: 'Label_1', label: '30-NEWSLETTERS/Promoções', ids: ['1', '2'], total: 2 },
+    { labelId: 'Label_2', label: '60-SEGURANCA/Alertas', ids: ['3'], total: 1 },
+  ];
+  const respostas = [{}, { error: { message: 'Forbidden - perhaps check your credentials?' } }];
+  const [ok, falha] = run(code('Registrar aplicação'), respostas, {
+    Config: { execucaoId: '7' }, 'Agrupar por marcador': grupos,
+  }).map(i => i.json);
+  assert.strictEqual(ok.status, 'CONFIRMADO');
+  assert.strictEqual(ok.messageIds, '1,2');
+  assert.strictEqual(falha.status, 'ERRO');
+  assert.match(falha.erro, /Forbidden/);
+  assert.strictEqual(falha.label, '60-SEGURANCA/Alertas');
+});
