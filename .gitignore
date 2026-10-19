@@ -9,3 +9,6 @@ token*.json
 exports/
 node_modules/
 .DS_Store
+
+# Contexto pessoal do Claude Code (dados da caixa real)
+CLAUDE.local.md
