@@ -33,6 +33,16 @@ const resumo = {
   'Com anexo grande': rows.filter(r => r.anexoGrande).length,
   'Antigos': rows.filter(r => r.antigo).length,
 };
+// Cobertura: quantos e-mails a busca encontrou, quantos o limite cortou e quantas leituras falharam.
+// Sem isso, falhas de leitura somem em silêncio e o relatório parece completo sem ser.
+const encontrados = $('Separar mensagens').all().length;
+const dentroDoLimite = $('Limitar lote').all().length;
+const falhas = $('Buscar metadados').all().filter(i => !i.json.id || i.json.error).length;
+add('COBERTURA', 'Encontrados na busca', encontrados);
+add('COBERTURA', 'Fora do limite maxEmails', encontrados - dentroDoLimite, encontrados > dentroDoLimite ? 'aumente maxEmails no Config' : '');
+add('COBERTURA', 'Falhas de leitura', falhas, falhas ? 'não entram no relatório; rode de novo' : '');
+add('COBERTURA', 'Analisados', total, encontrados ? ((total / encontrados) * 100).toFixed(1) + '% do encontrado' : '');
+
 for (const [k, v] of Object.entries(resumo)) add('RESUMO', k, v, pct(v));
 
 for (const [k, v] of contar(rows, r => r.remetenteEmail).slice(0, 30)) add('TOP_REMETENTES', k, v, nomes[k] || '');

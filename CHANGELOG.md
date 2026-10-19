@@ -10,6 +10,9 @@
 - Aba `aplicacoes` com a confirmação do Gmail para cada lote (`CONFIRMADO`/`ERRO`); a `auditoria` passa a registrar `PENDENTE` em vez de `ENVIADO`, e uma falha no `batchModify` não interrompe o registro.
 - Documentação das regras em `docs/regras.md`.
 
+### Corrigido
+- Fase 1 subcontava a caixa: o limite `maxEmails` (5.000) cortava metade de uma caixa com mais de 10 mil e-mails, e leituras com falha eram descartadas sem aviso. O limite passa a 15.000 e o relatório ganha a seção "Cobertura da leitura" (encontrados, fora do limite, falhas de leitura, analisados), com alerta de relatório parcial no e-mail.
+
 ## [0.3.1] - 2026-10-15
 ### Corrigido
 - Erro 403 `rateLimitExceeded` (cota de 6.000 unidades/min por usuário da Gmail API) em caixas com milhares de e-mails: ritmo de leitura reduzido para cerca de 9 req/s e retentativas em todos os nós HTTP.

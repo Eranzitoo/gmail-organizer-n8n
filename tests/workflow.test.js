@@ -10,7 +10,10 @@ const code = n => byName(n).parameters.jsCode;
 const run = (src, items, refs = {}) =>
   new Function('$input', '$', src)(
     { all: () => items.map(json => ({ json })) },
-    name => ({ first: () => ({ json: refs[name] }) })
+    name => ({
+      first: () => ({ json: refs[name] }),
+      all: () => (Array.isArray(refs[name]) ? refs[name] : []).map(json => ({ json })),
+    })
   );
 
 test('segurança: leitura só com GET; único POST é o envio do relatório', () => {
@@ -97,4 +100,20 @@ test('relatório: cada execução grava numa aba nova com data e hora', () => {
   const rows = [{ secao: 'RESUMO', item: 'Total analisado', quantidade: 1 }];
   const out = new Function('$', code('Repassar linhas'))(() => ({ all: () => rows.map(json => ({ json })) }));
   assert.deepStrictEqual(out.map(i => i.json), rows);
+});
+
+test('relatório: cobertura mostra corte do limite e falhas de leitura', () => {
+  const norm = run(code('Normalizar'), mensagens, refs).map(i => i.json);
+  const ids = n => Array.from({ length: n }, (_, i) => ({ id: 'm' + i }));
+  const agg = run(code('Agregar relatório'), norm, {
+    'Separar mensagens': ids(5),
+    'Limitar lote': ids(3),
+    'Buscar metadados': mensagens,
+  }).map(i => i.json);
+  const cob = Object.fromEntries(agg.filter(r => r.secao === 'COBERTURA').map(r => [r.item, r.quantidade]));
+  assert.deepStrictEqual(cob, { 'Encontrados na busca': 5, 'Fora do limite maxEmails': 2, 'Falhas de leitura': 1, 'Analisados': 2 });
+  const html = run(code('Montar e-mail'), agg)[0].json.html;
+  assert.match(html, /relatório parcial/);
+  const max = byName('Config').parameters.assignments.assignments.find(a => a.name === 'maxEmails').value;
+  assert.ok(max >= 15000, 'maxEmails abaixo do tamanho real da caixa');
 });
