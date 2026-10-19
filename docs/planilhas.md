@@ -26,8 +26,13 @@ A aba `dados` é sobrescrita a cada execução, porque representa o estado atual
 
 ## `Gmail - Auditoria` (a partir da Fase 2)
 
-Aba `auditoria`, uma linha por e-mail avaliado (pode ficar na mesma planilha do diagnóstico ou em uma separada):
+Duas abas com as mesmas colunas (podem ficar na mesma planilha do diagnóstico ou em uma separada):
+
+- **`simulacao`**: recebe as execuções em `DRY_RUN` e é limpa no início de cada uma, então sempre mostra só a simulação mais recente.
+- **`auditoria`**: recebe as execuções em `APLICAR`, uma linha por ação, e **nunca é limpa**. É o registro permanente do que foi alterado no Gmail.
+
+Colunas:
 
 `timestamp, execucaoId, modo (DRY_RUN/APLICAR), messageId, threadId, remetente, dominio, assunto, dataEmail, labelsAntes, categoria, labelSugerido, labelId, recomendacao (MANTER/REVISAR/PROTEGIDO), confianca (ALTA/MEDIA/BAIXA), origemDecisao (REGRA), regraId, acaoSugerida, acaoExecutada, status (SIMULADO/ENVIADO/ERRO), linkGmail`
 
-O cabeçalho é criado na primeira execução. Para ver os domínios sem regra: `=QUERY(auditoria!A:Q; "select G, count(G) where Q = 'PADRAO' group by G order by count(G) desc"; 1)`.
+O cabeçalho é criado na primeira execução. Para ver os domínios sem regra: `=QUERY(simulacao!A:Q; "select G, count(G) where Q = 'PADRAO' group by G order by count(G) desc"; 1)`.

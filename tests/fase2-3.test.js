@@ -129,3 +129,16 @@ test('pendências: bancos, vagas, estágio e marketing classificados', () => {
   assert.strictEqual(r.afyaCob.labelSugerido, '50-FINANCEIRO/Faturas');
   assert.ok(Object.values(r).every(x => x.status === 'SIMULADO'), 'algum marcador não existe na lista de teste');
 });
+
+test('segurança: auditoria nunca é limpa; DRY_RUN grava só na aba simulacao', () => {
+  const sheets = wf.nodes.filter(n => n.type === 'n8n-nodes-base.googleSheets');
+  const limpezas = sheets.filter(n => n.parameters.operation === 'clear');
+  assert.ok(limpezas.length > 0, 'nó de limpeza da simulação não encontrado');
+  assert.ok(limpezas.every(n => n.parameters.sheetName.value === 'simulacao'), 'só a aba simulacao pode ser limpa');
+  assert.strictEqual(wf.connections['Config'].main[0][0].node, 'Limpar simulação', 'limpeza deve rodar antes da leitura');
+  const aba = byName('Salvar auditoria').parameters.sheetName.value;
+  const destino = modo => new Function('$', `return \`${aba.replace(/^=\{\{(.*)\}\}$/s, '${$1}')}\``)(() => ({ first: () => ({ json: { modo } }) }));
+  assert.strictEqual(destino('DRY_RUN'), 'simulacao');
+  assert.strictEqual(destino('APLICAR'), 'auditoria');
+  assert.strictEqual(destino('QUALQUER_OUTRO'), 'simulacao', 'modo desconhecido não pode gravar na auditoria');
+});

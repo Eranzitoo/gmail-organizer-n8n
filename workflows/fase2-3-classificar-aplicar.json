@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## Gmail – Fase 2/3: Classificar e aplicar marcadores\n**Modo padrão: DRY_RUN** (só grava na aba `auditoria`, não toca no Gmail).\n\n1. Rode em DRY_RUN e revise a aba `auditoria`.\n2. Para aplicar: mude `modo` no Config para `APLICAR`.\n3. Cada execução pega até `maxAcoes` e-mails **ainda sem marcador** (`has:nouserlabels`); rode de novo até zerar.\n\nSó ADICIONA marcadores. Nunca arquiva, nunca marca como lido, nunca usa a quarentena.\nCredenciais: leitura = **Gmail Leitura (readonly)**; **Aplicar marcadores** = **Gmail Organizar (modify)**.",
+        "content": "## Gmail – Fase 2/3: Classificar e aplicar marcadores\n**Modo padrão: DRY_RUN** (grava na aba `simulacao`, limpa a cada execução; não toca no Gmail).\n\n1. Rode em DRY_RUN e revise a aba `simulacao`. No modo APLICAR, cada ação é acrescentada à aba `auditoria`, que nunca é limpa.\n2. Para aplicar: mude `modo` no Config para `APLICAR`.\n3. Cada execução pega até `maxAcoes` e-mails **ainda sem marcador** (`has:nouserlabels`); rode de novo até zerar.\n\nSó ADICIONA marcadores. Nunca arquiva, nunca marca como lido, nunca usa a quarentena.\nCredenciais: leitura = **Gmail Leitura (readonly)**; **Aplicar marcadores** = **Gmail Organizar (modify)**.",
         "width": 560,
         "height": 300
       },
@@ -67,6 +67,32 @@
     },
     {
       "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "COLE_AQUI_O_ID_DA_PLANILHA"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "simulacao"
+        },
+        "clear": "wholeSheet",
+        "keepFirstRow": true
+      },
+      "name": "Limpar simulação",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        440,
+        100
+      ],
+      "executeOnce": true,
+      "notes": "Limpa só a aba simulacao (DRY_RUN). A aba auditoria é um registro permanente e nunca é limpa."
+    },
+    {
+      "parameters": {
         "url": "https://gmail.googleapis.com/gmail/v1/users/me/labels",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "googleOAuth2Api",
@@ -76,7 +102,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        440,
+        660,
         100
       ],
       "executeOnce": true,
@@ -108,7 +134,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        660,
+        880,
         100
       ],
       "executeOnce": true,
@@ -125,7 +151,7 @@
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        880,
+        1100,
         100
       ]
     },
@@ -147,7 +173,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1100,
+        1320,
         100
       ],
       "retryOnFail": true,
@@ -163,7 +189,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1320,
+        1540,
         100
       ]
     },
@@ -178,7 +204,7 @@
         "sheetName": {
           "__rl": true,
           "mode": "name",
-          "value": "auditoria"
+          "value": "={{ $('Config').first().json.modo === 'APLICAR' ? 'auditoria' : 'simulacao' }}"
         },
         "columns": {
           "mappingMode": "autoMapInputData",
@@ -194,7 +220,7 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
       "position": [
-        1540,
+        1760,
         100
       ]
     },
@@ -206,7 +232,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1760,
+        1980,
         100
       ]
     },
@@ -232,7 +258,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1980,
+        2200,
         100
       ],
       "retryOnFail": true,
@@ -248,7 +274,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1760,
+        1980,
         300
       ],
       "executeOnce": true
@@ -270,7 +296,7 @@
       "main": [
         [
           {
-            "node": "Listar labels",
+            "node": "Limpar simulação",
             "type": "main",
             "index": 0
           }
@@ -353,6 +379,17 @@
         [
           {
             "node": "Aplicar marcadores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpar simulação": {
+      "main": [
+        [
+          {
+            "node": "Listar labels",
             "type": "main",
             "index": 0
           }
