@@ -117,3 +117,14 @@ test('relatório: cobertura mostra corte do limite e falhas de leitura', () => {
   const max = byName('Config').parameters.assignments.assignments.find(a => a.name === 'maxEmails').value;
   assert.ok(max >= 15000, 'maxEmails abaixo do tamanho real da caixa');
 });
+
+test('cota: Fase 1 e Fase 2/3 juntas ficam abaixo de 6.000 unidades/min', () => {
+  // messages.get custa 5 unidades; a cota do Gmail é 6.000 unidades por minuto por usuário
+  const unidadesPorMinuto = (workflow, no) => {
+    const { batchSize, batchInterval } = workflow.nodes.find(n => n.name === no).parameters.options.batching.batch;
+    return (batchSize / (batchInterval / 1000)) * 60 * 5;
+  };
+  const fase23 = require('../workflows/fase2-3-classificar-aplicar.json');
+  const soma = unidadesPorMinuto(wf, 'Buscar metadados') + unidadesPorMinuto(fase23, 'Buscar metadados');
+  assert.ok(soma < 5000, `leitura simultânea gastaria ${Math.round(soma)} unidades/min (limite 6.000, margem mínima 1.000)`);
+});

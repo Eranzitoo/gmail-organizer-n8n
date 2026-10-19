@@ -100,7 +100,7 @@ O CI (GitHub Actions) valida a cada push que:
 │   ├── fase1-diagnostico.json         # diagnóstico somente leitura
 │   └── fase2-3-classificar-aplicar.json # classificação + aplicação de marcadores
 ├── src/code-nodes/                    # JS dos nós Code, legível para revisão
-├── tests/                             # testes de segurança e lógica (19)
+├── tests/                             # testes de segurança e lógica (20)
 ├── scripts/extract-code-nodes.js      # sincroniza src/ a partir do JSON
 ├── docs/
 │   ├── playbook-fase1.pdf             # guia de implementação do zero

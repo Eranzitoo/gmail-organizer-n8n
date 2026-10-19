@@ -15,6 +15,7 @@
 
 ### Alterado
 - E-mail do diagnóstico com novo layout: cabeçalho, cartões com os números principais, tabelas com linhas alternadas e barras de porcentagem, tudo com estilos inline compatíveis com Gmail e Outlook.
+- Fase 1 lê 10 e-mails a cada 2 s (antes 1,1 s): cerca de 1.500 unidades/min, para rodar ao mesmo tempo que a Fase 2/3 sem estourar a cota de 6.000 unidades/min.
 
 ## [0.3.1] - 2026-10-15
 ### Corrigido
