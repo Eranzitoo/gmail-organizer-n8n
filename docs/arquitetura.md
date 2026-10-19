@@ -16,7 +16,7 @@ O nó Gmail nativo do n8n usa uma credencial que pede, entre outros, o escopo `h
 | 6 | Listar mensagens | `GET /users/me/messages?q=...` | Inclui arquivados; exclui spam e lixeira por padrão |
 | 7 | Separar mensagens | Split Out | Um item por mensagem |
 | 8 | Limitar lote | Limit | Mais recentes primeiro |
-| 9 | Buscar metadados | `GET /users/me/messages/{id}?format=metadata` | Lotes de 10 a cada 2 s (~1.500 unidades/min), 5 tentativas, erro não interrompe e é contado no relatório |
+| 9 | Buscar metadados | `GET /users/me/messages/{id}?format=metadata` | Lotes de 10 a cada 1 s (~3.000 unidades/min), 5 tentativas, erro não interrompe e é contado no relatório |
 | 10 | Normalizar | Code | Extrai os campos e mascara números de 6 a 8 dígitos |
 | 11 | Salvar diagnóstico | Google Sheets (append, RAW) | `RAW` evita injeção de fórmulas vindas de assuntos |
 | 12 | Agregar relatório | Code | Gera linhas `secao / item / quantidade / detalhe` |

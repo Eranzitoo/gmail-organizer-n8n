@@ -246,7 +246,7 @@
           "batching": {
             "batch": {
               "batchSize": 10,
-              "batchInterval": 2000
+              "batchInterval": 1000
             }
           }
         }
