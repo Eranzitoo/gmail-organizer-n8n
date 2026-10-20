@@ -98,7 +98,8 @@ const fuso = cfg.fuso || 'America/Sao_Paulo';
 const maxCaracteres = Number(cfg.maxCaracteres) || 8000;
 const inicioEm = Date.parse(cfg.inicioEm);
 // Teto de chamadas ao Gemini por execução. O que passar fica sem registro e entra na próxima execução.
-const maxIA = Number(cfg.maxIA) || 0;
+// Sem o campo no Config (ou com valor inválido), vale 5, o limite por minuto do plano gratuito.
+const maxIA = Number(cfg.maxIA) > 0 ? Number(cfg.maxIA) : 5;
 let paraIA = 0;
 const ignorados = String(cfg.remetentesIgnorados || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
 const idPorNome = Object.fromEntries(($('Listar labels').first().json.labels || []).map(l => [l.name, l.id]));

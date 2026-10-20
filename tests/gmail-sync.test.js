@@ -279,6 +279,8 @@ test('Preparar: só maxIA e-mails vão para a IA por execução; o resto espera 
   assert.deepStrictEqual(out.filter(o => o.json.enviarIA).map(o => o.json.messageId), ['m0', 'm1', 'm2', 'm3', 'm4']);
   assert.ok(out.some(o => o.json.messageId === 'promo'), 'e-mail sem IA não entra no teto');
   assert.ok(!out.some(o => ['m5', 'm6'].includes(o.json.messageId)), 'excedentes ficam para a próxima execução');
+  const semCampo = preparar(msgs, { maxIA: undefined }).filter(o => o.json.enviarIA);
+  assert.strictEqual(semCampo.length, 5, 'Config sem maxIA não pode bloquear a IA');
 });
 
 test('Preparar: convites e erros de leitura não vão para a IA', () => {
