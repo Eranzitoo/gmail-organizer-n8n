@@ -28,7 +28,7 @@ Uma caixa com mais de 10.000 e-mails: newsletters, promoções, notificações e
 | **Confiança baixa vai para revisão** | Se a classificação for incerta, o e-mail vai para `03-REVISAR`, nunca para a quarentena. |
 | **Auditoria completa** | Cada ação registra o que havia antes, o que foi feito e o motivo. |
 | **Liberação gradual** | A quarentena começa só com ruído óbvio. Newsletters e e-mails antigos entram depois de semanas de revisão. |
-| **Privacidade** | Lê só metadados e o trecho inicial, e mascara códigos de verificação antes de gravar. |
+| **Privacidade** | As fases de organização leem só metadados e o trecho inicial. O gmail-sync lê o corpo inteiro, mas nunca envia alertas de segurança à IA e mascara números sensíveis antes. |
 
 ## Arquitetura da Fase 1 — Diagnóstico
 
@@ -82,8 +82,20 @@ Detalhes técnicos em [`docs/arquitetura.md`](docs/arquitetura.md) e no modelo d
 | 3. Organização | Aplicação de marcadores via `batchModify` (só adiciona); arquivamento e quarentena em etapas | `gmail.modify` | 🟡 Marcadores aplicados; arquivamento e quarentena pendentes |
 | 4. Relatórios | Relatórios diário e semanal | `gmail.modify` | ⏳ Planejada |
 | 5. Manutenção | Rotina diária e workflow manual "Esvaziar quarentena" | `gmail.modify` | ⏳ Planejada |
+| gmail-sync | E-mails com data viram eventos no Google Agenda, com o Gemini ([detalhes](docs/gmail-sync.md)) | `gmail.readonly` + `calendar.events.owned` | 🧪 Em validação |
 
 O escopo `https://mail.google.com/`, único que permite exclusão permanente, **não é usado em nenhuma fase**.
+
+## gmail-sync — e-mails viram eventos na agenda
+
+Workflow paralelo às fases: lê os e-mails recentes da Inbox, pergunta ao **Gemini** se há um compromisso com data (reunião, entrevista, prazo, vencimento) e cria o evento numa agenda dedicada do Google Agenda, com link para o e-mail de origem.
+
+- **A IA só sugere.** Regras fixas decidem: limiar de confiança, datas válidas no fuso certo e busca de duplicados (inclusive de eventos que você apagou, que não voltam).
+- **Privacidade antes da IA.** Alertas de segurança nunca são enviados, e cartão, CPF, linha digitável e códigos são mascarados.
+- **Gmail continua só leitura**; no Calendar o workflow só lista e insere eventos, sem convidados.
+- `DRY_RUN` por padrão, gatilho de 30 em 30 minutos desativado até a validação, e cada decisão registrada na aba `agenda`.
+
+Configuração, credenciais e teste manual em [`docs/gmail-sync.md`](docs/gmail-sync.md).
 
 ## Como usar
 
@@ -114,15 +126,17 @@ O CI (GitHub Actions) valida a cada push que:
 ```
 ├── workflows/
 │   ├── fase1-diagnostico.json         # diagnóstico somente leitura
-│   └── fase2-3-classificar-aplicar.json # classificação + aplicação de marcadores
+│   ├── fase2-3-classificar-aplicar.json # classificação + aplicação de marcadores
+│   └── gmail-sync-agenda.json         # e-mails com data viram eventos (Gemini + Calendar)
 ├── src/code-nodes/                    # JS dos nós Code, legível para revisão
-├── tests/                             # testes de segurança e lógica (21)
+├── tests/                             # testes de segurança e lógica (45)
 ├── scripts/extract-code-nodes.js      # sincroniza src/ a partir do JSON
 ├── docs/
 │   ├── playbook-fase1.pdf             # guia de implementação do zero
 │   ├── arquitetura.md                 # nó a nó, API, paginação, limites
 │   ├── seguranca.md                   # modelo de ameaças e escopos
 │   ├── planilhas.md                   # esquema das planilhas
+│   ├── gmail-sync.md                  # gmail-sync: configuração e teste manual
 │   └── regras.md                      # regras de classificação
 └── .github/workflows/ci.yml
 ```
@@ -133,6 +147,8 @@ O CI (GitHub Actions) valida a cada push que:
   <img alt="n8n" src="https://img.shields.io/badge/n8n-EA4B71?style=for-the-badge&logo=n8n&logoColor=white">
   <img alt="Gmail API" src="https://img.shields.io/badge/Gmail_API-EA4335?style=for-the-badge&logo=gmail&logoColor=white">
   <img alt="Google OAuth 2.0" src="https://img.shields.io/badge/OAuth_2.0-4285F4?style=for-the-badge&logo=google&logoColor=white">
+  <img alt="Google Calendar API" src="https://img.shields.io/badge/Google_Calendar-4285F4?style=for-the-badge&logo=googlecalendar&logoColor=white">
+  <img alt="Gemini API" src="https://img.shields.io/badge/Gemini_API-8E75B2?style=for-the-badge&logo=googlegemini&logoColor=white">
   <img alt="Google Sheets API" src="https://img.shields.io/badge/Google_Sheets-34A853?style=for-the-badge&logo=googlesheets&logoColor=white">
   <img alt="JavaScript" src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black">
   <img alt="Node.js" src="https://img.shields.io/badge/Node.js_test-5FA04E?style=for-the-badge&logo=nodedotjs&logoColor=white">
@@ -143,8 +159,10 @@ O CI (GitHub Actions) valida a cada push que:
 |---|---|
 | **n8n** (self-hosted) | Orquestração dos workflows |
 | **Gmail API (REST)** | Leitura, envio do relatório e aplicação de marcadores, cada um com escopo próprio |
-| **Google OAuth 2.0** | Credenciais separadas por escopo (`readonly`, `send`, `modify`) |
+| **Google OAuth 2.0** | Credenciais separadas por escopo (`readonly`, `send`, `modify`, `calendar.events.owned`) |
 | **Google Sheets API** | Relatórios de diagnóstico e trilha de auditoria |
+| **Google Calendar API** | Criação dos eventos do gmail-sync, só com escopo de eventos |
+| **Gemini API** | Extração de compromissos dos e-mails, com saída em JSON de esquema fixo |
 | **JavaScript** | Lógica dos nós Code: normalização, classificação e agregação |
 | **Node.js `node --test`** | Testes de segurança e lógica, sem dependências |
 | **GitHub Actions** | CI: valida o JSON, roda os testes e confere a sincronia de `src/` |

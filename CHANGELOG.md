@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.5.0] - 2026-10-20
+### Adicionado
+- Workflow `gmail-sync-agenda.json`: lê os e-mails recentes da Inbox, usa o Gemini para identificar compromissos com data (reunião, entrevista, prazo, vencimento, evento) e cria o evento numa agenda dedicada do Google Agenda, com link para o e-mail de origem. `DRY_RUN` por padrão e gatilho de 30 minutos desativado até a validação.
+- A IA só sugere: regras fixas decidem pelo limiar de confiança, validam as datas no fuso configurado (passado ou mais de 365 dias vão para `REVISAR`), tratam prazos e vencimentos como dia inteiro e buscam duplicados pelo id do e-mail (inclusive eventos apagados) e por título e início.
+- Filtro de privacidade antes da IA: as regras `SEG-*` da Fase 2/3 e a lista `remetentesIgnorados` nunca são enviadas, e cartão, CPF, linha digitável e códigos são mascarados.
+- Aba `agenda`, que nunca é limpa: uma linha por e-mail com o status final, usada também para não processar o mesmo e-mail duas vezes. Erros são tentados de novo até 3 vezes por modo; falta de cota do Gemini (`ERRO_COTA_IA`) é tentada sem limite.
+- 24 testes novos: Gmail só com GET, Calendar só lista e insere sem convidados, chave do Gemini só no cabeçalho, regras `SEG-*` idênticas às da Fase 2/3, mascaramento, validação da resposta da IA, datas e fuso, duplicados, colunas da planilha e cota do Gmail.
+- Documentação em `docs/gmail-sync.md`, com riscos e mitigações em `docs/seguranca.md` e a aba `agenda` em `docs/planilhas.md`.
+
 ## [0.4.0] - 2026-10-20
 ### Adicionado
 - Workflow `fase2-3-classificar-aplicar.json`: 15 regras determinísticas (protegidas primeiro), auditoria completa na aba `auditoria`, modo DRY_RUN por padrão e aplicação de marcadores via `messages.batchModify` (só `addLabelIds`).
