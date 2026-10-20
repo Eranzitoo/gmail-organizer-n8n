@@ -80,20 +80,23 @@ Detalhes técnicos em [`docs/arquitetura.md`](docs/arquitetura.md) e no modelo d
 | 1. Diagnóstico | Leitura completa, planilha e relatório por e-mail | `gmail.readonly` + `gmail.send` | ✅ Concluída |
 | 2. Classificação | Regras determinísticas (protegidas primeiro), auditoria em planilha, DRY RUN por padrão | `gmail.readonly` | ✅ Concluída |
 | 3. Organização | Aplicação de marcadores via `batchModify` (só adiciona); arquivamento e quarentena em etapas | `gmail.modify` | 🟡 Marcadores aplicados; arquivamento e quarentena pendentes |
-| 4. Relatórios | Relatórios diário e semanal | `gmail.modify` | ⏳ Planejada |
+| 4. Relatórios | Resumo diário, semanal e mensal dos e-mails novos ([detalhes](docs/gmail-sync.md)) | `gmail.readonly` + `gmail.send` | 🧪 Em validação |
 | 5. Manutenção | Rotina diária e workflow manual "Esvaziar quarentena" | `gmail.modify` | ⏳ Planejada |
-| gmail-sync | E-mails com data viram eventos no Google Agenda, com o Gemini ([detalhes](docs/gmail-sync.md)) | `gmail.readonly` + `calendar.events.owned` | 🧪 Em validação |
+| gmail-sync | E-mails novos resumidos pelo Gemini, marcados e, quando têm data, levados ao Google Agenda ([detalhes](docs/gmail-sync.md)) | `gmail.readonly` + `gmail.modify` + `calendar.events.owned` | 🧪 Em validação |
 
 O escopo `https://mail.google.com/`, único que permite exclusão permanente, **não é usado em nenhuma fase**.
 
-## gmail-sync — e-mails viram eventos na agenda
+## E-mails novos: resumo, marcador, agenda e relatórios
 
-Workflow paralelo às fases: lê os e-mails recentes da Inbox, pergunta ao **Gemini** se há um compromisso com data (reunião, entrevista, prazo, vencimento) e cria o evento numa agenda dedicada do Google Agenda, com link para o e-mail de origem.
+Para o que chega daqui em diante (a partir de `inicioEm`), dois workflows trabalham juntos:
 
-- **A IA só sugere.** Regras fixas decidem: limiar de confiança, datas válidas no fuso certo e busca de duplicados (inclusive de eventos que você apagou, que não voltam).
-- **Privacidade antes da IA.** Alertas de segurança nunca são enviados, e cartão, CPF, linha digitável e códigos são mascarados.
-- **Gmail continua só leitura**; no Calendar o workflow só lista e insere eventos, sem convidados.
-- `DRY_RUN` por padrão, gatilho de 30 em 30 minutos desativado até a validação, e cada decisão registrada na aba `agenda`.
+- **gmail-sync** (a cada 30 min): aplica o marcador certo, pede ao **Gemini** um resumo curto e, se o e-mail traz um compromisso com data, cria o evento numa agenda dedicada do Google Agenda.
+- **gmail-relatorios**: manda para o seu e-mail um resumo **diário** (22h), **semanal** (domingo, 22h) e **mensal** (dia 1, 8h), com os resumos, os compromissos, a contagem por marcador, as promoções por remetente e o que ficou para revisar.
+
+- **Regras antes da IA.** As regras da Fase 2/3 decidem o marcador quando casam; o Gemini só escolhe no resto, de uma lista fechada e sem a quarentena, e com pouca certeza o e-mail vai para `03-REVISAR`.
+- **Privacidade antes da IA.** Promoções, newsletters e alertas de segurança não vão para o Gemini, e cartão, CPF, linha digitável e códigos são mascarados.
+- **Gmail só ganha marcadores**; no Calendar o workflow só lista e insere eventos, sem convidados. Eventos que você apagou não voltam.
+- `DRY_RUN` por padrão, gatilhos agendados desativados até a validação, e cada e-mail registrado na aba `emails_novos`.
 
 Configuração, credenciais e teste manual em [`docs/gmail-sync.md`](docs/gmail-sync.md).
 
@@ -127,16 +130,17 @@ O CI (GitHub Actions) valida a cada push que:
 ├── workflows/
 │   ├── fase1-diagnostico.json         # diagnóstico somente leitura
 │   ├── fase2-3-classificar-aplicar.json # classificação + aplicação de marcadores
-│   └── gmail-sync-agenda.json         # e-mails com data viram eventos (Gemini + Calendar)
+│   ├── gmail-sync.json                # e-mails novos: resumo, marcador e agenda (Gemini)
+│   └── gmail-relatorios.json          # resumo diário, semanal e mensal por e-mail
 ├── src/code-nodes/                    # JS dos nós Code, legível para revisão
-├── tests/                             # testes de segurança e lógica (45)
+├── tests/                             # testes de segurança e lógica (56)
 ├── scripts/extract-code-nodes.js      # sincroniza src/ a partir do JSON
 ├── docs/
 │   ├── playbook-fase1.pdf             # guia de implementação do zero
 │   ├── arquitetura.md                 # nó a nó, API, paginação, limites
 │   ├── seguranca.md                   # modelo de ameaças e escopos
 │   ├── planilhas.md                   # esquema das planilhas
-│   ├── gmail-sync.md                  # gmail-sync: configuração e teste manual
+│   ├── gmail-sync.md                  # e-mails novos e relatórios: configuração e teste
 │   └── regras.md                      # regras de classificação
 └── .github/workflows/ci.yml
 ```
@@ -162,7 +166,7 @@ O CI (GitHub Actions) valida a cada push que:
 | **Google OAuth 2.0** | Credenciais separadas por escopo (`readonly`, `send`, `modify`, `calendar.events.owned`) |
 | **Google Sheets API** | Relatórios de diagnóstico e trilha de auditoria |
 | **Google Calendar API** | Criação dos eventos do gmail-sync, só com escopo de eventos |
-| **Gemini API** | Extração de compromissos dos e-mails, com saída em JSON de esquema fixo |
+| **Gemini API** | Resumo, marcador sugerido e compromissos dos e-mails novos, com saída em JSON de esquema fixo |
 | **JavaScript** | Lógica dos nós Code: normalização, classificação e agregação |
 | **Node.js `node --test`** | Testes de segurança e lógica, sem dependências |
 | **GitHub Actions** | CI: valida o JSON, roda os testes e confere a sincronia de `src/` |

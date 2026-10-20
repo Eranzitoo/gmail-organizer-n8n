@@ -16,6 +16,7 @@
 | gmail-sync: conteúdo de e-mail enviado ao Gemini | Alertas de segurança (`SEG-*`) e `remetentesIgnorados` nunca são enviados; cartão, CPF, linha digitável e códigos são mascarados; só vão remetente, assunto, data e corpo truncado (nada de anexos ou cópias). No plano gratuito do Gemini, o Google pode usar o conteúdo enviado para melhorar seus produtos, inclusive com revisão humana; para evitar isso, ative o faturamento no projeto |
 | gmail-sync: injeção de prompt no corpo do e-mail | O prompt trata o e-mail como dado; a resposta precisa seguir um esquema fixo; a IA não tem ferramentas; `linkOnline` só passa se estiver literalmente no e-mail; títulos e textos têm tamanho limitado; quem decide são as regras |
 | gmail-sync: evento errado na agenda | Agenda dedicada, limiar de confiança, datas no passado ou a mais de 365 dias vão para `REVISAR`, link para o e-mail de origem na descrição, sem convidados e `sendUpdates=none` |
+| gmail-sync: marcador errado num e-mail novo | Regras da Fase 2/3 decidem primeiro; a IA só escolhe de uma lista fechada, sem a quarentena, e com confiança mínima; o resto vai para `03-REVISAR`; só adiciona marcadores, então desfazer é tirar o marcador |
 | gmail-sync: escopo amplo no Google Agenda | Credencial só com `calendar.events.owned`; o CI garante que o workflow só lista e insere eventos (nada de `DELETE`, `PATCH`, `move` ou `calendarList`) |
 | gmail-sync: chave da IA exposta | A chave fica numa credencial *Header Auth* do n8n e vai no cabeçalho `x-goog-api-key`, nunca na URL; o CI procura chaves `AIza...` no JSON |
 
@@ -25,7 +26,8 @@
 |---|---|
 | 1–2 | `gmail.readonly` (credencial de leitura), `gmail.send` (credencial só de envio), `spreadsheets`, `drive.file` |
 | 3–5 | `gmail.modify`, `spreadsheets`, `drive.file` |
-| gmail-sync | `gmail.readonly`, `calendar.events.owned`, `spreadsheets` e uma chave da API do Gemini |
+| gmail-sync | `gmail.readonly`, `gmail.modify` (só para adicionar marcadores), `calendar.events.owned`, `spreadsheets` e uma chave da API do Gemini |
+| gmail-relatorios | `gmail.readonly` (perfil), `gmail.send` (envio para o próprio e-mail), `spreadsheets` |
 | Nunca | `https://mail.google.com/` |
 
 ## Liberação gradual da quarentena

@@ -43,13 +43,13 @@ No modo APLICAR o status fica `PENDENTE`: a linha registra a intenção, não a 
 
 Para saber se um e-mail foi marcado, cruze `execucaoId` + `labelId` da `auditoria` com a `aplicacoes`.
 
-## Aba `agenda` (gmail-sync)
+## Aba `emails_novos` (gmail-sync)
 
-Uma linha por e-mail analisado pelo [gmail-sync](gmail-sync.md), em qualquer desfecho. **Nunca é limpa**: além de auditoria, ela é o histórico que impede o workflow de processar o mesmo e-mail duas vezes. Crie a aba vazia; o cabeçalho é criado na primeira execução.
+Uma linha por e-mail novo processado pelo [gmail-sync](gmail-sync.md), em qualquer desfecho. **Nunca é limpa**: é a auditoria, o histórico que impede o workflow de processar o mesmo e-mail duas vezes e a fonte dos relatórios diário, semanal e mensal. Crie a aba vazia; o cabeçalho é criado na primeira execução.
 
-`timestamp, execucaoId, modo (DRY_RUN/APLICAR), messageId, remetente, assunto (mascarado), dataEmail, tipo, confianca, titulo, inicio, fim, diaInteiro, status, motivo, tentativa, eventId, linkEvento, linkGmail, modeloIA`
+`timestamp, execucaoId, modo (DRY_RUN/APLICAR), messageId, remetente, assunto (mascarado), dataEmail, categoria, resumo, marcador, origemMarcador (REGRA/IA/PADRAO), regraId, statusMarcador, tipo, confianca, titulo, inicio, fim, diaInteiro, status, motivo, tentativa, eventId, linkEvento, linkGmail, modeloIA`
 
-Os valores de `status` estão explicados em [`docs/gmail-sync.md`](gmail-sync.md#status-da-aba-agenda).
+Os valores de `status` e `statusMarcador` estão explicados em [`docs/gmail-sync.md`](gmail-sync.md#status-da-aba-emails_novos). A confirmação dos marcadores aplicados vai para a mesma aba `aplicacoes` da Fase 2/3.
 
 ---
 

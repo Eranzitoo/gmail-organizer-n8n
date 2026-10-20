@@ -2,12 +2,16 @@
 
 ## [0.5.0] - 2026-10-20
 ### Adicionado
-- Workflow `gmail-sync-agenda.json`: lê os e-mails recentes da Inbox, usa o Gemini para identificar compromissos com data (reunião, entrevista, prazo, vencimento, evento) e cria o evento numa agenda dedicada do Google Agenda, com link para o e-mail de origem. `DRY_RUN` por padrão e gatilho de 30 minutos desativado até a validação.
-- A IA só sugere: regras fixas decidem pelo limiar de confiança, validam as datas no fuso configurado (passado ou mais de 365 dias vão para `REVISAR`), tratam prazos e vencimentos como dia inteiro e buscam duplicados pelo id do e-mail (inclusive eventos apagados) e por título e início.
-- Filtro de privacidade antes da IA: as regras `SEG-*` da Fase 2/3 e a lista `remetentesIgnorados` nunca são enviadas, e cartão, CPF, linha digitável e códigos são mascarados.
-- Aba `agenda`, que nunca é limpa: uma linha por e-mail com o status final, usada também para não processar o mesmo e-mail duas vezes. Erros são tentados de novo até 3 vezes por modo; falta de cota do Gemini (`ERRO_COTA_IA`) é tentada sem limite.
-- 24 testes novos: Gmail só com GET, Calendar só lista e insere sem convidados, chave do Gemini só no cabeçalho, regras `SEG-*` idênticas às da Fase 2/3, mascaramento, validação da resposta da IA, datas e fuso, duplicados, colunas da planilha e cota do Gmail.
-- Documentação em `docs/gmail-sync.md`, com riscos e mitigações em `docs/seguranca.md` e a aba `agenda` em `docs/planilhas.md`.
+- Workflow `gmail-sync.json`, só para e-mails que chegam depois de `inicioEm`: aplica o marcador (regras da Fase 2/3 primeiro; sem regra, o Gemini escolhe de uma lista fechada, sem a quarentena, e com pouca confiança vai para `03-REVISAR`), pede ao Gemini um resumo de até 2 frases e, quando o e-mail traz um compromisso com data, cria o evento numa agenda dedicada do Google Agenda. `DRY_RUN` por padrão e gatilho de 30 minutos desativado até a validação.
+- Workflow `gmail-relatorios.json`: resumo diário (22h), semanal (domingo, 22h) e mensal (dia 1, 8h) dos e-mails novos, enviado para o próprio e-mail com `gmail.send`. Lê só a aba `emails_novos`, sem chamar o Gmail nem a IA.
+- A IA só sugere: regras fixas validam a resposta, as datas no fuso configurado (passado ou mais de 365 dias vão para `REVISAR`), tratam prazos e vencimentos como dia inteiro e buscam duplicados pelo id do e-mail (inclusive eventos apagados) e por título e início.
+- Filtro de privacidade antes da IA: promoções, newsletters, redes sociais, alertas de segurança (`SEG-*`) e `remetentesIgnorados` não são enviados, e cartão, CPF, linha digitável e códigos são mascarados.
+- Aba `emails_novos`, que nunca é limpa: uma linha por e-mail com resumo, marcador, status e evento. Erros são tentados de novo até 3 vezes por modo; falta de cota do Gemini (`ERRO_COTA_IA`) é tentada sem limite. Os marcadores aplicados são confirmados na aba `aplicacoes`, a mesma da Fase 2/3.
+- 35 testes novos: Gmail só lê e adiciona marcadores, Calendar só lista e insere sem convidados, chave do Gemini só no cabeçalho, regras idênticas às da Fase 2/3, escolha do marcador, mascaramento, validação da resposta da IA, datas e fuso, duplicados, janelas e conteúdo dos relatórios, e cota do Gmail.
+- Documentação em `docs/gmail-sync.md`, com riscos e mitigações em `docs/seguranca.md` e a aba `emails_novos` em `docs/planilhas.md`.
+
+### Alterado
+- Regra `SIS-01` passa a reconhecer também os relatórios `[Gmail] Resumo ...`, para que eles sejam marcados como sistema e nunca enviados à IA.
 
 ## [0.4.0] - 2026-10-20
 ### Adicionado
