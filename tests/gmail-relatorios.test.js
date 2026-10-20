@@ -77,7 +77,8 @@ test('diário: só o que chegou hoje, um e-mail por linha e resumos agrupados', 
   assert.ok(!/versão simulada/.test(r.html), 'linha APLICAR vence a DRY_RUN');
   assert.ok(!/de ontem/.test(r.html));
   assert.match(r.html, /Compromissos na agenda[\s\S]*Prova de cálculo/);
-  assert.match(r.html, /Promoções e newsletters por remetente[\s\S]*loja@x\.com[\s\S]*<b>2<\/b>/);
+  assert.match(r.html, /Promoções e newsletters por remetente[\s\S]*loja@x\.com[\s\S]*<strong>2<\/strong>/);
+  assert.match(r.html, /RELATÓRIO DIÁRIO/);
   assert.match(r.html, /Para revisar[\s\S]*Assunto 6/);
   assert.ok(!/DRY_RUN/.test(r.html), 'sem aviso de simulação quando tudo é APLICAR');
 });
@@ -100,6 +101,8 @@ test('semanal e mensal: janelas certas, sem resumos no mensal e aviso de simula�
   assert.match(semana.assunto, /^\[Gmail\] Resumo semanal – \d{2}\/\d{2} a \d{2}\/\d{2}\/\d{4}$/);
   assert.match(semana.html, /DRY_RUN/);
   assert.match(semana.html, /simulado/);
+  assert.match(semana.html, /RELATÓRIO SEMANAL/, 'cabeçalho acompanha o período');
+  assert.ok(!/RELATÓRIO DIÁRIO/.test(semana.html));
 
   const [ano, mes] = hoje.split('-').map(Number);
   const anterior = mes === 1 ? `${ano - 1}-12` : `${ano}-${String(mes - 1).padStart(2, '0')}`;
@@ -112,6 +115,7 @@ test('semanal e mensal: janelas certas, sem resumos no mensal e aviso de simula�
   assert.match(mensal.assunto, /^\[Gmail\] Resumo mensal – \S+ de \d{4}$/);
   assert.ok(!/resumo que não aparece/.test(mensal.html), 'mensal mostra só números');
   assert.match(mensal.html, /Por marcador/);
+  assert.match(mensal.html, /RELATÓRIO MENSAL/);
   assert.match(mensal.html, /Falhas[\s\S]*ERRO_IA/);
 });
 

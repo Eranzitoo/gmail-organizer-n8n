@@ -1,5 +1,9 @@
 # Changelog
 
+## [Não publicado]
+### Alterado
+- Novo visual dos relatórios: azul-marinho e verde petróleo, cartões arredondados e texto de prévia na caixa de entrada. O cabeçalho mostra o período (diário, semanal ou mensal).
+
 ## [0.5.0] - 2026-10-20
 ### Adicionado
 - Workflow `gmail-sync.json`, só para e-mails que chegam depois de `inicioEm`: aplica o marcador (regras da Fase 2/3 primeiro; sem regra, o Gemini escolhe de uma lista fechada, sem a quarentena, e com pouca confiança vai para `03-REVISAR`), pede ao Gemini um resumo de até 2 frases e, quando o e-mail traz um compromisso com data, cria o evento numa agenda dedicada do Google Agenda. `DRY_RUN` por padrão e gatilho de 3 minutos desativado até a validação.

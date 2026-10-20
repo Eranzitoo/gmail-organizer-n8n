@@ -68,37 +68,54 @@ const contar = (lista, chave) => Object.entries(lista.reduce((c, l) => ((c[chave
 
 // HTML
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const link = (url, texto) => /^https:\/\//.test(String(url)) ? `<a href="${esc(url)}" style="color:#2563eb;text-decoration:none">${esc(texto)}</a>` : esc(texto);
-const cor = { texto: '#1f2937', suave: '#6b7280', borda: '#e5e7eb', fundo: '#f3f4f6', zebra: '#f9fafb', destaque: '#2563eb', alerta: '#b00020' };
+const link = (url, texto) => /^https:\/\//.test(String(url)) ? `<a href="${esc(url)}" style="color:#0d6b63;text-decoration:none;font-weight:bold">${esc(texto)}</a>` : esc(texto);
+
+// Identidade visual do relatório: azul-marinho, verde petróleo e cinzas suaves.
+const cor = {
+  texto: '#152238',
+  corpo: '#26364d',
+  suave: '#6c7a8d',
+  borda: '#e3e8ee',
+  fundo: '#eef2f6',
+  painel: '#f6f8fa',
+  zebra: '#fbfcfd',
+  destaque: '#0d6b63',
+  cabecalho: '#152238',
+  alertaFundo: '#fff8e8',
+  alertaBorda: '#d39a27',
+  alertaTexto: '#79551a',
+  erro: '#a33a45',
+};
 const fonte = 'font-family:Arial,Helvetica,sans-serif';
-const titulo = t => `<h3 style="${fonte};font-size:15px;color:${cor.texto};margin:24px 0 8px">${esc(t)}</h3>`;
-const tabela = (cabecalho, linhasHtml) => `<table width="100%" cellpadding="0" cellspacing="0" style="${fonte};font-size:13px;border-collapse:collapse;border:1px solid ${cor.borda}">`
-  + `<tr style="background:${cor.fundo};color:${cor.suave};font-size:11px;text-transform:uppercase">`
-  + cabecalho.map(([t, alinha]) => `<th align="${alinha || 'left'}" style="padding:8px">${esc(t)}</th>`).join('') + `</tr>`
-  + linhasHtml.map((celulas, n) => `<tr style="background:${n % 2 ? cor.zebra : '#ffffff'};border-top:1px solid ${cor.borda}">`
-    + celulas.map(([v, alinha]) => `<td align="${alinha || 'left'}" style="padding:7px 8px;color:${cor.texto};vertical-align:top">${v}</td>`).join('') + `</tr>`).join('')
+const titulo = t => `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:30px 0 12px"><tr><td style="padding:0"><div style="${fonte};font-size:10px;line-height:14px;letter-spacing:1px;text-transform:uppercase;color:${cor.destaque};font-weight:bold">RELATÓRIO</div><div style="${fonte};font-size:17px;line-height:24px;color:${cor.texto};font-weight:bold">${esc(t)}</div></td></tr></table>`;
+const tabela = (cabecalho, linhasHtml) => `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="${fonte};font-size:13px;border-collapse:separate;border-spacing:0;border:1px solid ${cor.borda};border-radius:10px;overflow:hidden">`
+  + `<tr style="background:${cor.painel};color:${cor.suave};font-size:10px;text-transform:uppercase;letter-spacing:.5px">`
+  + cabecalho.map(([t, alinha]) => `<th align="${alinha || 'left'}" style="padding:11px 12px;font-weight:bold">${esc(t)}</th>`).join('') + `</tr>`
+  + linhasHtml.map((celulas, n) => `<tr style="background:${n % 2 ? cor.zebra : '#ffffff'}">`
+    + celulas.map(([v, alinha]) => `<td align="${alinha || 'left'}" style="padding:11px 12px;color:${cor.corpo};line-height:19px;vertical-align:top;border-top:1px solid ${cor.borda}">${v}</td>`).join('') + `</tr>`).join('')
   + `</table>`;
 const mais = (total, mostrados) => total > mostrados
-  ? `<div style="font-size:12px;color:${cor.suave};margin-top:4px">e mais ${total - mostrados}, na aba emails_novos.</div>` : '';
+  ? `<div style="${fonte};font-size:12px;line-height:18px;color:${cor.suave};margin-top:6px">e mais ${total - mostrados}, disponíveis na aba emails_novos.</div>` : '';
 const quando = l => esc(l.inicio ? br(String(l.inicio).slice(0, 10)) + (String(l.inicio).length > 10 ? ' ' + String(l.inicio).slice(11, 16) : '') : '');
 
 const nomes = { diario: 'diário', semanal: 'semanal', mensal: 'mensal' };
-const cartoes = [
-  ['Novos', linhas.length], ['Resumidos', resumidos.length], ['Promoções', promocoes.length],
-  ['Compromissos', compromissos.length], ['Para revisar', revisar.length],
-].map(([r, n]) => `<td width="20%" style="padding:4px">`
-  + `<div style="background:#ffffff;border:1px solid ${cor.borda};border-radius:8px;padding:12px 4px;text-align:center">`
-  + `<div style="font-size:22px;font-weight:bold;color:${cor.texto}">${n.toLocaleString('pt-BR')}</div>`
-  + `<div style="font-size:12px;color:${cor.suave};margin-top:2px">${r}</div></div></td>`).join('');
+const indicadores = [
+  ['Novos', linhas.length, cor.texto], ['Resumidos', resumidos.length, cor.texto], ['Promoções', promocoes.length, cor.texto],
+  ['Compromissos', compromissos.length, cor.texto], ['Para revisar', revisar.length, cor.destaque],
+];
+const cartoes = indicadores.map(([r, n, corNumero]) => `<td width="20%" style="padding:3px;vertical-align:top">`
+  + `<div style="background:${cor.painel};border:1px solid ${cor.borda};border-radius:10px;padding:13px 3px;text-align:center">`
+  + `<div style="${fonte};font-size:23px;line-height:28px;font-weight:bold;color:${corNumero}">${n.toLocaleString('pt-BR')}</div>`
+  + `<div style="${fonte};font-size:10px;line-height:15px;color:${cor.suave};margin-top:4px">${r}</div></div></td>`).join('');
 
 let corpo = '';
 if (simulacao) {
-  corpo += `<div style="background:#fff7e6;border-left:4px solid #d97706;padding:10px 12px;color:#92400e;font-size:13px;margin-bottom:12px">`
-    + `Inclui execuções em <b>DRY_RUN</b>: marcadores e eventos marcados como simulados não foram aplicados.</div>`;
+  corpo += `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px"><tr><td style="background:${cor.alertaFundo};border-left:4px solid ${cor.alertaBorda};padding:12px 14px;color:${cor.alertaTexto};font-size:12px;line-height:18px">`
+    + `<strong>Atenção:</strong> esta execução inclui o modo <strong>DRY_RUN</strong>. Marcadores e eventos simulados não foram aplicados.</td></tr></table>`;
 }
-corpo += `<table width="100%" cellpadding="0" cellspacing="0"><tr>${cartoes}</tr></table>`;
+corpo += `<table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>${cartoes}</tr></table>`;
 if (!linhas.length) {
-  corpo += `<p style="${fonte};font-size:14px;color:${cor.suave};margin:24px 0">Nenhum e-mail novo neste período.</p>`;
+  corpo += `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:24px"><tr><td style="${fonte};font-size:14px;line-height:21px;color:${cor.suave};background:${cor.painel};border-radius:10px;padding:16px">Nenhum e-mail novo neste período.</td></tr></table>`;
 } else {
   if (compromissos.length) {
     const lista = compromissos.slice(0, LIMITE_LISTA);
@@ -110,38 +127,46 @@ if (!linhas.length) {
   if (limite && resumidos.length) {
     const lista = [...resumidos].sort((a, b) => String(a.marcador).localeCompare(String(b.marcador))).slice(0, limite);
     corpo += titulo('Resumo dos e-mails') + tabela([['Marcador'], ['E-mail'], ['Resumo']], lista.map(l => [
-      [`<span style="color:${cor.suave};font-size:12px">${esc(l.marcador)}</span>`],
-      [`<b>${esc(l.remetente)}</b><br>${link(l.linkGmail, l.assunto || '(sem assunto)')}`],
+      [`<span style="color:${cor.suave};font-size:11px;line-height:16px">${esc(l.marcador)}</span>`],
+      [`<strong>${esc(l.remetente)}</strong><br>${link(l.linkGmail, l.assunto || '(sem assunto)')}`],
       [esc(l.resumo)],
     ])) + mais(resumidos.length, lista.length);
   }
   corpo += titulo('Por marcador') + tabela([['Marcador'], ['Qtd', 'right']],
-    contar(linhas, l => l.marcador).map(([m, n]) => [[esc(m)], [`<b>${n}</b>`, 'right']]));
+    contar(linhas, l => l.marcador).map(([m, n]) => [[esc(m)], [`<strong>${n}</strong>`, 'right']]));
   if (promocoes.length) {
     const top = contar(promocoes, l => l.remetente).slice(0, 15);
     corpo += titulo('Promoções e newsletters por remetente') + tabela([['Remetente'], ['Qtd', 'right']],
-      top.map(([r, n]) => [[esc(r)], [`<b>${n}</b>`, 'right']]));
+      top.map(([r, n]) => [[esc(r)], [`<strong>${n}</strong>`, 'right']]));
   }
   if (revisar.length) {
     const lista = revisar.slice(0, LIMITE_LISTA);
     corpo += titulo('Para revisar') + tabela([['E-mail'], ['Motivo']], lista.map(l => [
-      [`<b>${esc(l.remetente)}</b><br>${link(l.linkGmail, l.assunto || '(sem assunto)')}`],
+      [`<strong>${esc(l.remetente)}</strong><br>${link(l.linkGmail, l.assunto || '(sem assunto)')}`],
       [esc(l.status === 'REVISAR' ? l.motivo : 'nenhuma regra nem a IA teve certeza do marcador')],
     ])) + mais(revisar.length, lista.length);
   }
   if (erros.length) {
     corpo += titulo('Falhas') + tabela([['Situação'], ['Qtd', 'right']],
-      contar(erros, l => l.status).map(([s, n]) => [[esc(s)], [`<b>${n}</b>`, 'right']]));
+      contar(erros, l => l.status).map(([s, n]) => [[esc(s)], [`<strong>${n}</strong>`, 'right']]));
   }
 }
 
-const html = `<div style="background:${cor.fundo};padding:16px 0">`
-  + `<table align="center" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border-radius:10px;${fonte}">`
-  + `<tr><td style="background:${cor.destaque};border-radius:10px 10px 0 0;padding:20px 24px;color:#ffffff">`
-  + `<div style="font-size:20px;font-weight:bold">📬 Resumo ${nomes[periodo]} do Gmail</div>`
-  + `<div style="font-size:13px;opacity:0.9;margin-top:4px">${esc(rotulo)} · só e-mails que chegaram depois da ativação</div></td></tr>`
-  + `<tr><td style="padding:16px 20px 24px">${corpo}</td></tr>`
-  + `<tr><td style="padding:12px 24px;border-top:1px solid ${cor.borda};font-size:11px;color:${cor.suave}">`
-  + `gmail-organizer-n8n · gmail-sync</td></tr></table></div>`;
+// Texto de prévia (aparece ao lado do assunto na caixa de entrada) e moldura do e-mail.
+const preheader = `Resumo ${nomes[periodo]} do Gmail: ${linhas.length.toLocaleString('pt-BR')} novo(s) e-mail(s).`;
+const html = `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${esc(preheader)}</div>`
+  + `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${cor.fundo};padding:28px 12px">`
+  + `<tr><td align="center">`
+  + `<table align="center" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:680px;background:#ffffff;border-radius:18px;overflow:hidden;${fonte};box-shadow:0 5px 20px rgba(21,34,56,.08)">`
+  + `<tr><td style="background:${cor.cabecalho};padding:30px 34px 28px;color:#ffffff">`
+  + `<div style="font-size:10px;line-height:14px;letter-spacing:1.4px;color:#73d2c2;font-weight:bold">RELATÓRIO ${nomes[periodo].toUpperCase()}</div>`
+  + `<div style="font-size:26px;line-height:32px;font-weight:bold;margin-top:8px">Resumo do Gmail</div>`
+  + `<div style="font-size:13px;line-height:20px;color:#c9d3df;margin-top:8px">Período ${esc(rotulo)} &nbsp;·&nbsp; E-mails recebidos após a ativação</div>`
+  + `</td></tr>`
+  + `<tr><td style="padding:24px 34px 0">${corpo}</td></tr>`
+  + `<tr><td style="border-top:1px solid ${cor.borda};background:#f8fafb;padding:18px 34px;color:${cor.suave};font-size:11px;line-height:17px">`
+  + `Gerado automaticamente por <strong style="color:${cor.texto}">gmail-organizer-n8n</strong> · gmail-sync<br>`
+  + `<span style="color:#9aa6b5;font-size:10px">Este relatório foi enviado pelo seu fluxo de automação.</span>`
+  + `</td></tr></table></td></tr></table>`;
 
 return [{ json: { html, assunto: `[Gmail] Resumo ${nomes[periodo]} – ${rotulo}`, periodo, total: linhas.length } }];
