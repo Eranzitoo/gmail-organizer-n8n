@@ -130,6 +130,19 @@ test('cota: Fase 1 e Fase 2/3 juntas ficam abaixo de 6.000 unidades/min', () => 
   assert.ok(soma < 5000, `leitura simultânea gastaria ${Math.round(soma)} unidades/min (limite 6.000, margem mínima 1.000)`);
 });
 
+test('cota: gmail-sync fica em até 500 unidades/min e, somado à Fase 2/3, abaixo de 2.500', () => {
+  const unidadesPorMinuto = (workflow, no) => {
+    const { batchSize, batchInterval } = workflow.nodes.find(n => n.name === no).parameters.options.batching.batch;
+    return (batchSize / (batchInterval / 1000)) * 60 * 5;
+  };
+  const sync = require('../workflows/gmail-sync-agenda.json');
+  const fase23 = require('../workflows/fase2-3-classificar-aplicar.json');
+  const leitura = unidadesPorMinuto(sync, 'Buscar e-mail') + 5; // + 5 da listagem
+  assert.ok(leitura <= 500, `gmail-sync gastaria ${Math.round(leitura)} unidades/min`);
+  const soma = leitura + unidadesPorMinuto(fase23, 'Buscar metadados');
+  assert.ok(soma < 2500, `gmail-sync e Fase 2/3 juntos gastariam ${Math.round(soma)} unidades/min`);
+});
+
 test('leituras que falham são relidas após esperar a cota', () => {
   const bom = (id, from) => ({ id, threadId: 't' + id, internalDate: String(now), labelIds: ['INBOX'],
     payload: { headers: [{ name: 'From', value: from }] } });
