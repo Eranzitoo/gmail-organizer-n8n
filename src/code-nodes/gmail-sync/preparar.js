@@ -97,6 +97,9 @@ const aplicar = cfg.modo === 'APLICAR';
 const fuso = cfg.fuso || 'America/Sao_Paulo';
 const maxCaracteres = Number(cfg.maxCaracteres) || 8000;
 const inicioEm = Date.parse(cfg.inicioEm);
+// Teto de chamadas ao Gemini por execução. O que passar fica sem registro e entra na próxima execução.
+const maxIA = Number(cfg.maxIA) || 0;
+let paraIA = 0;
 const ignorados = String(cfg.remetentesIgnorados || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
 const idPorNome = Object.fromEntries(($('Listar labels').first().json.labels || []).map(l => [l.name, l.id]));
 const marcar = (marcador, origemMarcador) => {
@@ -208,6 +211,8 @@ for (let i = 0; i < itens.length; i++) {
   } else if (semResumo) {
     Object.assign(item, rotuloSemIA, { status: 'SEM_RESUMO', motivo: 'promoção, newsletter ou notificação' });
   } else {
+    if (paraIA >= maxIA) continue;
+    paraIA++;
     if (porRegra) Object.assign(item, rotuloSemIA);
     item.corpo = mascarar(extrairCorpo(j.payload)).slice(0, maxCaracteres);
     item.enviarIA = true;

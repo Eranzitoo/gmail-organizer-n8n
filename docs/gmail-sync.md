@@ -2,7 +2,7 @@
 
 Dois workflows tratam **só os e-mails que chegam a partir de uma data** (`inicioEm`). O acúmulo antigo continua com as Fases 1 a 3.
 
-- [`workflows/gmail-sync.json`](../workflows/gmail-sync.json) roda a cada 15 minutos. Para cada e-mail novo, ele:
+- [`workflows/gmail-sync.json`](../workflows/gmail-sync.json) roda a cada 2 minutos, com no máximo 5 chamadas ao Gemini por execução. Para cada e-mail novo, ele:
   1. aplica o marcador certo: as regras da Fase 2/3 decidem quando casam, e o Gemini escolhe quando nenhuma casa;
   2. pede ao **Gemini** um resumo de até 2 frases (menos promoções, newsletters, redes sociais e alertas de segurança);
   3. cria um evento numa agenda dedicada do Google Agenda quando o e-mail traz um compromisso com data;
@@ -23,7 +23,7 @@ As garantias do projeto continuam valendo:
 
 | # | Nó | Endpoint / função | Observações |
 |---|---|---|---|
-| 1 | Iniciar / A cada 15 min | Manual / Schedule Trigger | O agendado **vem desativado** |
+| 1 | Iniciar / A cada 2 min | Manual / Schedule Trigger | O agendado **vem desativado** |
 | 2 | Config | Set | Parâmetros (tabela abaixo) |
 | 3 | Ler histórico | Google Sheets (read) | Aba `emails_novos`, para não processar o mesmo e-mail duas vezes |
 | 4 | Listar labels | `GET /gmail/v1/users/me/labels` | Nome → ID dos marcadores |
@@ -32,7 +32,7 @@ As garantias do projeto continuam valendo:
 | 7 | Buscar e-mail | `GET /messages/{id}?format=full` | 1 a cada 800 ms (~375 unidades/min) |
 | 8 | Preparar | Code | Regras da Fase 2/3, filtros de privacidade, mascaramento e requisição ao Gemini |
 | 9 | Enviar à IA? | If | Promoções, newsletters, convites, alertas e erros seguem sem IA |
-| 10 | Classificar com IA | `POST generativelanguage.googleapis.com/v1beta/models/{modelo}:generateContent` | Resumo, marcador e compromisso num JSON de esquema fixo; 1 chamada a cada 15 s, sem nova tentativa imediata |
+| 10 | Classificar com IA | `POST generativelanguage.googleapis.com/v1beta/models/{modelo}:generateContent` | Resumo, marcador e compromisso num JSON de esquema fixo; no máximo `maxIA` (5) por execução, 1 a cada 12 s, sem nova tentativa imediata |
 | 11 | Decidir | Code | Valida a resposta, escolhe o marcador, normaliza datas e monta o evento |
 | 12 | Agrupar por marcador | Code | Só em `APLICAR`: uma chamada por marcador |
 | 13 | Aplicar marcadores | `POST /messages/batchModify` | Só `addLabelIds` |
@@ -69,7 +69,8 @@ As garantias do projeto continuam valendo:
 | `modo` | `DRY_RUN` | `APLICAR` aplica marcadores e cria eventos; qualquer outro valor é tratado como `DRY_RUN` |
 | `inicioEm` | `2026-10-20T00:00:00-03:00` | Só e-mails que chegaram depois disso |
 | `query` | `newer_than:2d -in:sent -in:drafts -in:chats` | Janela de busca a cada execução |
-| `maxEmails` | 30 | E-mails processados por execução |
+| `maxEmails` | 30 | E-mails lidos por execução |
+| `maxIA` | 5 | Chamadas ao Gemini por execução; o que passar fica para a próxima, sem registro |
 | `maxCaracteres` | 8000 | Tamanho máximo do corpo enviado à IA |
 | `modeloIA` | `gemini-flash-lite-latest` | Modelo do Gemini |
 | `limiarConfianca` | 0.8 | Abaixo disso, o marcador da IA vira `03-REVISAR` e o compromisso vira `REVISAR` |
@@ -106,7 +107,7 @@ A coluna `statusMarcador` diz o que aconteceu com o marcador: `SIMULADO` (DRY_RU
 ## Cotas
 
 - **Gmail:** no máximo ~380 unidades/min de leitura, mais uma chamada `batchModify` por marcador. Somado à Fase 2/3 fica abaixo de 2.500, mas **não rode junto com a Fase 1**.
-- **Gemini:** 1 chamada a cada 15 s (4 por minuto), só para os e-mails que não são promoção nem newsletter. O nó não repete na hora, porque repetir dentro do mesmo minuto só gera mais recusas: o e-mail fica como `ERRO_COTA_IA` e volta na execução seguinte, 15 minutos depois. Com 30 e-mails para a IA, uma execução leva cerca de 7,5 minutos.
+- **Gemini:** no máximo 5 chamadas por execução (`maxIA`), 1 a cada 12 s, e execuções a cada 2 minutos. Cada execução leva no máximo cerca de 1 minuto, então sobra pelo menos 1 minuto até a próxima e nunca passam de 5 chamadas por minuto, o limite gratuito. Só vão para a IA os e-mails que não são promoção, newsletter, vaga, rede social nem alerta de segurança. O nó não repete na hora, porque repetir dentro do mesmo minuto só gera mais recusas: o e-mail fica como `ERRO_COTA_IA` e volta na execução seguinte. Um teste garante que esses números continuam coerentes.
 
 ## Teste manual
 
@@ -115,4 +116,4 @@ A coluna `statusMarcador` diz o que aconteceu com o marcador: `SIMULADO` (DRY_RU
 3. Rode o **gmail-relatorios** pelo **Iniciar**: chega o resumo diário, com o aviso de DRY_RUN.
 4. Mude o gmail-sync para `APLICAR` e rode: os e-mails ganham os marcadores no Gmail, a aba `aplicacoes` mostra `CONFIRMADO`, e os dois eventos aparecem na agenda dedicada, sem convidados.
 5. Rode de novo: nada é recriado. Apague um evento e rode outra vez: ele não volta.
-6. Só então ative **A cada 15 min** no gmail-sync e os três gatilhos do gmail-relatorios.
+6. Só então ative **A cada 2 min** no gmail-sync e os três gatilhos do gmail-relatorios.

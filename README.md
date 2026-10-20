@@ -90,7 +90,7 @@ O escopo `https://mail.google.com/`, único que permite exclusão permanente, **
 
 Para o que chega daqui em diante (a partir de `inicioEm`), dois workflows trabalham juntos:
 
-- **gmail-sync** (a cada 15 min): aplica o marcador certo, pede ao **Gemini** um resumo curto e, se o e-mail traz um compromisso com data, cria o evento numa agenda dedicada do Google Agenda.
+- **gmail-sync** (a cada 2 min, até 5 chamadas ao Gemini por execução): aplica o marcador certo, pede ao **Gemini** um resumo curto e, se o e-mail traz um compromisso com data, cria o evento numa agenda dedicada do Google Agenda.
 - **gmail-relatorios**: manda para o seu e-mail um resumo **diário** (22h), **semanal** (domingo, 22h) e **mensal** (dia 1, 8h), com os resumos, os compromissos, a contagem por marcador, as promoções por remetente e o que ficou para revisar.
 
 - **Regras antes da IA.** As regras da Fase 2/3 decidem o marcador quando casam; o Gemini só escolhe no resto, de uma lista fechada e sem a quarentena, e com pouca certeza o e-mail vai para `03-REVISAR`.
@@ -133,7 +133,7 @@ O CI (GitHub Actions) valida a cada push que:
 │   ├── gmail-sync.json                # e-mails novos: resumo, marcador e agenda (Gemini)
 │   └── gmail-relatorios.json          # resumo diário, semanal e mensal por e-mail
 ├── src/code-nodes/                    # JS dos nós Code, legível para revisão
-├── tests/                             # testes de segurança e lógica (58)
+├── tests/                             # testes de segurança e lógica (60)
 ├── scripts/extract-code-nodes.js      # sincroniza src/ a partir do JSON
 ├── docs/
 │   ├── playbook-fase1.pdf             # guia de implementação do zero

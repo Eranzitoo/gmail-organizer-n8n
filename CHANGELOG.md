@@ -2,7 +2,7 @@
 
 ## [0.5.0] - 2026-10-20
 ### Adicionado
-- Workflow `gmail-sync.json`, só para e-mails que chegam depois de `inicioEm`: aplica o marcador (regras da Fase 2/3 primeiro; sem regra, o Gemini escolhe de uma lista fechada, sem a quarentena, e com pouca confiança vai para `03-REVISAR`), pede ao Gemini um resumo de até 2 frases e, quando o e-mail traz um compromisso com data, cria o evento numa agenda dedicada do Google Agenda. `DRY_RUN` por padrão e gatilho de 15 minutos desativado até a validação.
+- Workflow `gmail-sync.json`, só para e-mails que chegam depois de `inicioEm`: aplica o marcador (regras da Fase 2/3 primeiro; sem regra, o Gemini escolhe de uma lista fechada, sem a quarentena, e com pouca confiança vai para `03-REVISAR`), pede ao Gemini um resumo de até 2 frases e, quando o e-mail traz um compromisso com data, cria o evento numa agenda dedicada do Google Agenda. `DRY_RUN` por padrão e gatilho de 2 minutos desativado até a validação.
 - Workflow `gmail-relatorios.json`: resumo diário (22h), semanal (domingo, 22h) e mensal (dia 1, 8h) dos e-mails novos, enviado para o próprio e-mail com `gmail.send`. Lê só a aba `emails_novos`, sem chamar o Gmail nem a IA.
 - A IA só sugere: regras fixas validam a resposta, as datas no fuso configurado (passado ou mais de 365 dias vão para `REVISAR`), tratam prazos e vencimentos como dia inteiro e buscam duplicados pelo id do e-mail (inclusive eventos apagados) e por título e início.
 - Filtro de privacidade antes da IA: promoções, newsletters, redes sociais, alertas de segurança (`SEG-*`) e `remetentesIgnorados` não são enviados, e cartão, CPF, linha digitável e códigos são mascarados.
@@ -11,7 +11,7 @@
 - Documentação em `docs/gmail-sync.md`, com riscos e mitigações em `docs/seguranca.md` e a aba `emails_novos` em `docs/planilhas.md`.
 
 ### Alterado
-- Gemini chamado 1 vez a cada 15 s e sem nova tentativa imediata, com `gemini-flash-lite-latest` como padrão: no primeiro teste, o ritmo anterior gerou recusas por cota. Recusas por cota e instabilidade (429, 5xx, conexão abortada) viram `ERRO_COTA_IA` e voltam na próxima execução sem gastar tentativa.
+- Gemini limitado a 5 chamadas por execução (`maxIA`), 1 a cada 12 s e sem nova tentativa imediata, com execuções a cada 2 minutos e `gemini-flash-lite-latest` como padrão: nunca passa de 5 chamadas por minuto, o limite gratuito. No primeiro teste, o ritmo anterior gerou recusas por cota. Recusas por cota e instabilidade (429, 5xx, conexão abortada) viram `ERRO_COTA_IA` e voltam na próxima execução sem gastar tentativa.
 - O gmail-sync descarta e-mails anteriores a `inicioEm` também no código, porque a busca `after:` do Gmail deixou passar alguns.
 - Regra nova `COM-01`: avisos de pedido, pagamento e entrega da Shopee e do Mercado Livre (categoria Atualizações do Gmail) vão para `40-NOTIFICACOES/Compras` e ganham resumo no gmail-sync; o marketing dessas lojas continua em `PROMO-01`.
 - Regra `SIS-01` passa a reconhecer também os relatórios `[Gmail] Resumo ...`, para que eles sejam marcados como sistema e nunca enviados à IA.

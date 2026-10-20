@@ -46,7 +46,7 @@ test('Config: DRY_RUN, só e-mails novos e marcadores no lugar dos IDs', () => {
   const c = cfg();
   assert.deepStrictEqual(Object.keys(c).sort(), [
     'calendarId', 'duracaoPadraoMin', 'execucaoId', 'fuso', 'inicioEm', 'limiarConfianca', 'maxCaracteres', 'maxEmails',
-    'modeloIA', 'modo', 'query', 'remetentesIgnorados',
+    'maxIA', 'modeloIA', 'modo', 'query', 'remetentesIgnorados',
   ]);
   assert.strictEqual(c.modo, 'DRY_RUN');
   assert.strictEqual(c.calendarId, 'COLE_AQUI_O_ID_DA_AGENDA');
@@ -114,6 +114,16 @@ test('segurança: o único POST ao Gemini é o Classificar com IA, com chave no 
   assert.ok(n.parameters.options.batching.batch.batchInterval >= 12000, 'Gemini gratuito aguenta poucas chamadas por minuto');
   assert.strictEqual(n.onError, 'continueRegularOutput');
   assert.ok(n.parameters.options.timeout >= 30000);
+});
+
+test('cota do Gemini: no máximo 5 chamadas por minuto, mesmo com execuções seguidas', () => {
+  const maxIA = cfg().maxIA;
+  const { batchInterval } = byName('Classificar com IA').parameters.options.batching.batch;
+  const gatilho = wf.nodes.find(n => n.type === 'n8n-nodes-base.scheduleTrigger').parameters.rule.interval[0];
+  assert.ok(maxIA >= 1 && maxIA <= 5, `maxIA = ${maxIA}`);
+  assert.ok(batchInterval >= 12000, 'no máximo 5 chamadas dentro de um minuto');
+  const duracaoMs = (maxIA - 1) * batchInterval + 60000; // última chamada pode levar até o timeout
+  assert.ok(gatilho.field === 'minutes' && gatilho.minutesInterval * 60000 >= duracaoMs, 'execuções não podem se sobrepor');
 });
 
 test('regras: as mesmas da Fase 2/3, e a IA nunca escolhe a quarentena', () => {
@@ -260,6 +270,15 @@ test('Preparar: e-mail anterior a inicioEm fica de fora, mesmo se a busca deixar
   const out = preparar([antigo, msg('novo', { plain: 'y' })], { inicioEm: '2026-06-01T00:00:00-03:00' });
   assert.deepStrictEqual(out.map(o => o.json.messageId), ['novo']);
   assert.strictEqual(out[0].pairedItem.item, 1);
+});
+
+test('Preparar: só maxIA e-mails vão para a IA por execução; o resto espera sem registro', () => {
+  const msgs = Array.from({ length: 7 }, (_, i) => msg('m' + i, { from: `pessoa${i}@empresa.com`, plain: 'oi' }));
+  msgs.splice(3, 0, msg('promo', { from: 'oferta@loja.com', plain: 'x', labelIds: ['INBOX', 'CATEGORY_PROMOTIONS'] }));
+  const out = preparar(msgs, { maxIA: 5 });
+  assert.deepStrictEqual(out.filter(o => o.json.enviarIA).map(o => o.json.messageId), ['m0', 'm1', 'm2', 'm3', 'm4']);
+  assert.ok(out.some(o => o.json.messageId === 'promo'), 'e-mail sem IA não entra no teto');
+  assert.ok(!out.some(o => ['m5', 'm6'].includes(o.json.messageId)), 'excedentes ficam para a próxima execução');
 });
 
 test('Preparar: convites e erros de leitura não vão para a IA', () => {
