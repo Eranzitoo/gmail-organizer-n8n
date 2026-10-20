@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.4.0] - 2026-10-15
+## [0.4.0] - 2026-10-20
 ### Adicionado
 - Workflow `fase2-3-classificar-aplicar.json`: 15 regras determinísticas (protegidas primeiro), auditoria completa na aba `auditoria`, modo DRY_RUN por padrão e aplicação de marcadores via `messages.batchModify` (só `addLabelIds`).
 - Processamento incremental: cada execução pega até 200 e-mails ainda sem marcador.
@@ -12,7 +12,7 @@
 
 ### Corrigido
 - Fase 1 subcontava a caixa: o limite `maxEmails` (5.000) cortava metade de uma caixa com mais de 10 mil e-mails, e leituras com falha eram descartadas sem aviso. O limite passa a 15.000 e o relatório ganha a seção "Cobertura da leitura" (encontrados, fora do limite, falhas de leitura, analisados), com alerta de relatório parcial no e-mail.
-- Leituras da Fase 1 recusadas por cota (403 `rateLimitExceeded`) são relidas após 65 s de espera, mais devagar. A Cobertura mostra quantas foram recuperadas; antes, 4.311 de 10.218 leituras se perdiam numa caixa grande.
+- Leituras da Fase 1 recusadas por cota (403 `rateLimitExceeded`) são relidas após 65 s de espera, mais devagar. A Cobertura mostra quantas foram recuperadas; antes, 4.311 de 10.218 leituras se perdiam numa caixa grande. Com a releitura, 4.684 leituras foram recuperadas e a cobertura chegou a 100%, sem falhas.
 
 ### Alterado
 - E-mail do diagnóstico com novo layout: cabeçalho, cartões com os números principais, tabelas com linhas alternadas e barras de porcentagem, tudo com estilos inline compatíveis com Gmail e Outlook.

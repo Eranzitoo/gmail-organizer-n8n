@@ -4,7 +4,7 @@
 ![n8n](https://img.shields.io/badge/n8n-workflow-EA4B71)
 ![Gmail API](https://img.shields.io/badge/Gmail%20API-readonly-0F766E)
 ![Fase 1](https://img.shields.io/badge/fase%201-concluída-success)
-![Fase 2/3](https://img.shields.io/badge/fase%202%2F3-em%20validação-yellow)
+![Fase 2/3](https://img.shields.io/badge/fase%202%2F3-marcadores%20aplicados-success)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
 Automação no **n8n** para diagnosticar, organizar e gerar relatórios de uma caixa **Gmail pessoal** com milhares de e-mails acumulados. O princípio central é **segurança por design**: nada é excluído automaticamente, e cada fase usa a menor permissão possível.
@@ -15,7 +15,7 @@ Automação no **n8n** para diagnosticar, organizar e gerar relatórios de uma c
 
 ## O problema
 
-Uma caixa com mais de 3.000 e-mails: newsletters, promoções, notificações e mensagens importantes misturadas. Limpar na mão é lento. Uma automação ingênua de "apagar lixo" é arriscada, porque um boleto, um exame ou um código de recuperação classificado errado pode ser perdido.
+Uma caixa com mais de 10.000 e-mails: newsletters, promoções, notificações e mensagens importantes misturadas. Limpar na mão é lento. Uma automação ingênua de "apagar lixo" é arriscada, porque um boleto, um exame ou um código de recuperação classificado errado pode ser perdido.
 
 ## A abordagem
 
@@ -40,20 +40,36 @@ flowchart LR
     D --> E[Juntar IDs]
     E --> F[Listar mensagens<br/><i>paginado, inclui arquivados</i>]
     F --> G[Separar] --> H[Limitar lote]
-    H --> I[Buscar metadados<br/><i>20 req/s, retry</i>]
-    I --> J[Normalizar<br/><i>mascara códigos</i>]
+    H --> I[Buscar metadados<br/><i>10 a cada 1 s, retry</i>]
+    I --> R{Falhas<br/>de cota?}
+    R -- sim --> W[Esperar 65 s] --> X[Reler falhas<br/><i>mais devagar</i>] --> J
+    R -- não --> J[Normalizar<br/><i>mascara códigos</i>]
     J --> K[(Sheets: dados)]
     J --> L[Agregar relatório]
     L --> M[(Sheets: nova aba<br/>relatorio_data-hora)]
     L --> N[Montar HTML] --> P[Obter meu e-mail] --> Q[Codificar MIME] --> O[✉ Enviar<br/><i>só gmail.send</i>]
 
     classDef read fill:#E6F4F2,stroke:#0F766E;
-    class C,D,F,I read;
+    class C,D,F,I,X read;
 ```
 
 Os nós em verde chamam a Gmail API **apenas com GET** usando uma credencial `gmail.readonly`. O envio do relatório usa uma **segunda credencial, só com `gmail.send`**, e o destinatário é sempre o próprio dono da conta, obtido via `/users/me/profile`. A credencial nativa "Gmail" do n8n pede o escopo total `https://mail.google.com/`, por isso foi evitada de propósito.
 
-**O relatório gerado inclui:** total de e-mails, top 30 remetentes, top domínios, e-mails por ano, por label e por categoria do Gmail, principais newsletters (com contagem de não lidos), notificações automáticas, e-mails antigos por remetente e os 30 maiores e-mails com anexo.
+Leituras recusadas pela cota da Gmail API (403 `rateLimitExceeded`) não se perdem: depois de 65 s, que liberam a janela de cota por minuto, elas são relidas num ritmo menor.
+
+**O relatório gerado inclui:** cobertura da leitura (encontrados, recuperados na releitura, falhas), total de e-mails, top 30 remetentes, top domínios, e-mails por ano, por label e por categoria do Gmail, principais newsletters (com contagem de não lidos), notificações automáticas, e-mails antigos por remetente e os 30 maiores e-mails com anexo.
+
+## Resultado na caixa real
+
+Caixa pessoal com cerca de 10.200 e-mails, incluindo arquivados.
+
+| | Antes | Depois |
+|---|---|---|
+| Leitura do diagnóstico | 5.907 de 10.218 (57,8%); 4.311 leituras recusadas por cota | 10.232 de 10.232 (100%); 4.684 recuperadas na releitura, 0 falhas |
+| E-mails sem marcador | caixa sem organização | 14 |
+| Organização | — | ~10.050 e-mails marcados pela Fase 2/3, ~10% enviados para revisão manual, 0 erros |
+
+Nenhum e-mail foi excluído: a Fase 2/3 só adiciona marcadores.
 
 Detalhes técnicos em [`docs/arquitetura.md`](docs/arquitetura.md) e no modelo de segurança em [`docs/seguranca.md`](docs/seguranca.md).
 
@@ -62,8 +78,8 @@ Detalhes técnicos em [`docs/arquitetura.md`](docs/arquitetura.md) e no modelo d
 | Fase | Entrega | Escopo Gmail | Status |
 |---|---|---|---|
 | 1. Diagnóstico | Leitura completa, planilha e relatório por e-mail | `gmail.readonly` + `gmail.send` | ✅ Concluída |
-| 2. Classificação | 15 regras determinísticas, auditoria em planilha, DRY RUN por padrão | `gmail.readonly` | 🧪 Em validação |
-| 3. Organização | Aplicação de marcadores via `batchModify` (só adiciona); arquivamento e quarentena em etapas | `gmail.modify` | 🧪 Em validação |
+| 2. Classificação | Regras determinísticas (protegidas primeiro), auditoria em planilha, DRY RUN por padrão | `gmail.readonly` | ✅ Concluída |
+| 3. Organização | Aplicação de marcadores via `batchModify` (só adiciona); arquivamento e quarentena em etapas | `gmail.modify` | 🟡 Marcadores aplicados; arquivamento e quarentena pendentes |
 | 4. Relatórios | Relatórios diário e semanal | `gmail.modify` | ⏳ Planejada |
 | 5. Manutenção | Rotina diária e workflow manual "Esvaziar quarentena" | `gmail.modify` | ⏳ Planejada |
 

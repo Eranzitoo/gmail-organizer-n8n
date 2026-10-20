@@ -26,7 +26,9 @@ O nó Gmail nativo do n8n usa uma credencial que pede, entre outros, o escopo `h
 | 16 | Agregar relatório | Code | Gera linhas `secao / item / quantidade / detalhe`, incluindo a Cobertura da leitura |
 | 17 | Salvar relatório | Google Sheets (append, RAW) | |
 | 18 | Montar e-mail | Code | HTML com estilos inline, escape de caracteres e alerta de relatório parcial |
-| 19 | Enviar relatório | Gmail (send) | **Desativado** |
+| 19 | Obter meu e-mail | `GET /users/me/profile` | O destinatário é sempre o dono da conta |
+| 20 | Codificar e-mail | Code | Monta a mensagem MIME e codifica em base64url |
+| 21 | Enviar relatório | `POST /users/me/messages/send` | Credencial separada, só com `gmail.send` |
 
 ## Decisões técnicas
 
@@ -34,5 +36,5 @@ O nó Gmail nativo do n8n usa uma credencial que pede, entre outros, o escopo `h
 - **Detecção de anexo** por uma busca separada `has:attachment`, porque `format=metadata` não retorna as partes MIME. "Anexo grande" é `temAnexo && sizeEstimate >= bigSizeMB`.
 - **Newsletter** é identificada pelos cabeçalhos `List-Unsubscribe`, `List-Id` ou `Precedence: bulk|list`.
 - **Notificação automática** é identificada por remetente `no-reply`/`notification`/`alert` ou pelo cabeçalho `Auto-Submitted`.
-- **Cota da Gmail API:** o limite que vale na prática é o de **6.000 unidades por minuto por usuário** (`totalQueryCostPerMinutePerUser`), e `messages.get` custa 5 unidades. O ritmo inicial, de cerca de 18 req/s (~5.400 unidades/min), somado às listagens, estourou esse limite com erro 403 `rateLimitExceeded`. O ritmo atual, de cerca de 9 req/s (~2.700 unidades/min), deixa uma folga de mais de 50%. Todos os nós HTTP têm 5 tentativas com 5 s de espera.
-- **Caixas grandes:** acima de cerca de 10 mil mensagens, recomenda-se executar por ano, via `query`, para respeitar limites de memória e tempo.
+- **Cota da Gmail API:** o limite que vale na prática é o de **6.000 unidades por minuto por usuário** (`totalQueryCostPerMinutePerUser`), e `messages.get` custa 5 unidades. O ritmo inicial, de cerca de 18 req/s (~5.400 unidades/min), somado às listagens, estourou esse limite com erro 403 `rateLimitExceeded`. O ritmo atual é de 10 leituras por segundo (~3.000 unidades/min). Mesmo assim, numa caixa com 10 mil e-mails parte das leituras ainda era recusada, então as falhas são separadas, o workflow espera 65 s e relê só elas, mais devagar. Na caixa real, isso levou a cobertura de 57,8% para 100%. Todos os nós HTTP têm 5 tentativas com 5 s de espera.
+- **Caixas grandes:** uma caixa com cerca de 10 mil mensagens roda inteira numa execução (`maxEmails` = 15.000). Bem acima disso, recomenda-se executar por ano, via `query`, para respeitar limites de memória e tempo.
