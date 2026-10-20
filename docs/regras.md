@@ -4,7 +4,7 @@ Regras determinísticas derivadas do diagnóstico de 3.070 e-mails. A **primeira
 
 | ID | Condição | Marcador | Recomendação | Confiança |
 |---|---|---|---|---|
-| SEG-01 | Remetente Google Contas / Microsoft proteção de conta | 60-SEGURANCA/Alertas | PROTEGIDO | ALTA |
+| SEG-01 | Remetente Google Contas (inclusive avisos de dados compartilhados com outros apps) / Microsoft proteção de conta | 60-SEGURANCA/Alertas | PROTEGIDO | ALTA |
 | SEG-02 | Remetente contas Riot Games / Supercell | 60-SEGURANCA/Login | PROTEGIDO | ALTA |
 | SEG-03 | Assunto com código de verificação, acesso ou redefinição de senha | 60-SEGURANCA/Login | PROTEGIDO | ALTA |
 | SEG-04 | Assunto com recuperação de conta | 60-SEGURANCA/Recuperacao | PROTEGIDO | ALTA |

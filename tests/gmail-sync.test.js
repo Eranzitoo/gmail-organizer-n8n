@@ -300,6 +300,9 @@ test('Preparar: convites e erros de leitura não vão para a IA', () => {
 });
 
 test('Preparar: privacidade e mascaramento antes do Gemini', () => {
+  const [compartilhou] = preparar([msg('9', { from: 'Google <noreply-accounts@google.com>', subject: 'Você compartilhou alguns dados da sua Conta do Google com xAI', plain: 'x' })]);
+  assert.deepStrictEqual([compartilhou.json.status, compartilhou.json.marcador, !!compartilhou.json.requisicaoIA],
+    ['IGNORADO_PRIVACIDADE', '60-SEGURANCA/Alertas', false], 'aviso de dados compartilhados não vai para a IA');
   const [google, codigo, ignorado, boleto] = preparar([
     msg('1', { from: 'Google <no-reply@accounts.google.com>', plain: 'alerta' }),
     msg('2', { subject: 'Seu código de verificação', plain: '123456' }),

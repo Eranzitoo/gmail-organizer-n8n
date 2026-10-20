@@ -11,6 +11,7 @@
 - Documentação em `docs/gmail-sync.md`, com riscos e mitigações em `docs/seguranca.md` e a aba `emails_novos` em `docs/planilhas.md`.
 
 ### Alterado
+- Regra `SEG-01` inclui `noreply-accounts@google.com` (avisos de dados da conta compartilhados com outros apps): vão para `60-SEGURANCA/Alertas` e nunca para a IA.
 - Gemini limitado a 5 chamadas por execução (`maxIA`), 1 a cada 12 s e sem nova tentativa imediata, com execuções a cada 2 minutos e `gemini-flash-lite-latest` como padrão: nunca passa de 5 chamadas por minuto, o limite gratuito. No primeiro teste, o ritmo anterior gerou recusas por cota. Recusas por cota e instabilidade (429, 5xx, conexão abortada) viram `ERRO_COTA_IA` e voltam na próxima execução sem gastar tentativa.
 - O gmail-sync descarta e-mails anteriores a `inicioEm` também no código, porque a busca `after:` do Gmail deixou passar alguns.
 - Regra nova `COM-01`: avisos de pedido, pagamento e entrega da Shopee e do Mercado Livre (categoria Atualizações do Gmail) vão para `40-NOTIFICACOES/Compras` e ganham resumo no gmail-sync; o marketing dessas lojas continua em `PROMO-01`.

@@ -6,7 +6,7 @@
 // =====================================================================
 const R = (id, label, recomendacao, cond, confianca = 'ALTA') => ({ id, label, recomendacao, confianca, ...cond });
 const REGRAS = [
-  R('SEG-01', '60-SEGURANCA/Alertas', 'PROTEGIDO', { from: /accounts\.google\.com|accountprotection\.microsoft\.com/ }),
+  R('SEG-01', '60-SEGURANCA/Alertas', 'PROTEGIDO', { from: /accounts\.google\.com|noreply-accounts@google\.com|accountprotection\.microsoft\.com/ }),
   R('SEG-02', '60-SEGURANCA/Login', 'PROTEGIDO', { from: /mail\.accounts\.riotgames\.com|id\.supercell\.com/ }),
   R('SEG-03', '60-SEGURANCA/Login', 'PROTEGIDO', { subject: /c[oó]digo de (verifica[cç][aã]o|acesso|seguran[cç]a)|verification code|security code|redefin(i[cç][aã]o de|ir (sua )?)senha|reset your password/i }),
   R('SEG-04', '60-SEGURANCA/Recuperacao', 'PROTEGIDO', { subject: /recupera[cç][aã]o de conta|account recovery/i }),
