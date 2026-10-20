@@ -1,4 +1,4 @@
-// Nó n8n: "Verificar duplicado" (workflow gmail-sync-agenda.json; gerado por scripts/extract-code-nodes.js, não edite aqui)
+// Nó n8n: "Verificar duplicado" (workflow gmail-sync.json; gerado por scripts/extract-code-nodes.js, não edite aqui)
 // Evita evento repetido: procura pelo id do e-mail (inclusive eventos já apagados)
 // e por um evento no mesmo dia com o mesmo título e o mesmo início. Erro em qualquer busca impede a criação.
 const normalizarTitulo = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '')

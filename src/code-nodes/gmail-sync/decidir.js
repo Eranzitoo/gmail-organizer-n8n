@@ -1,9 +1,17 @@
-// Nó n8n: "Decidir" (workflow gmail-sync-agenda.json; gerado por scripts/extract-code-nodes.js, não edite aqui)
+// Nó n8n: "Decidir" (workflow gmail-sync.json; gerado por scripts/extract-code-nodes.js, não edite aqui)
 // A IA só sugere; quem decide são as regras abaixo.
-// Resposta inválida vira ERRO_IA, falta de cota vira ERRO_COTA_IA, NENHUM vira SEM_EVENTO,
+// Marcador: o da regra, se houver; senão o da IA com confiança suficiente; senão 03-REVISAR.
+// Evento: resposta inválida vira ERRO_IA, falta de cota vira ERRO_COTA_IA, NENHUM vira SEM_EVENTO,
 // e confiança baixa ou data impossível vira REVISAR. Só o que passa em tudo é apto.
 const cfg = $('Config').first().json;
 const modo = cfg.modo === 'APLICAR' ? 'APLICAR' : 'DRY_RUN';
+const REVISAR = '00-INBOX-ZERO/03-REVISAR';
+const idPorNome = Object.fromEntries(($('Listar labels').first().json.labels || []).map(l => [l.name, l.id]));
+const marcar = (marcador, origemMarcador) => {
+  const labelId = idPorNome[marcador] || '';
+  const statusMarcador = !labelId ? 'ERRO: marcador não existe no Gmail' : modo === 'APLICAR' ? 'PENDENTE' : 'SIMULADO';
+  return { marcador, origemMarcador, labelId, statusMarcador };
+};
 const fuso = cfg.fuso || 'America/Sao_Paulo';
 const limiar = Number(cfg.limiarConfianca);
 const duracaoMin = Number(cfg.duracaoPadraoMin) || 60;
@@ -26,11 +34,15 @@ const validarResposta = resp => {
   try { r = JSON.parse(texto); } catch (e) { return { erro: 'JSON inválido' }; }
   if (!r || typeof r !== 'object') return { erro: 'JSON inválido' };
   for (const k of ['fim', 'local', 'linkOnline']) if (r[k] === undefined) r[k] = null;
-  const tipos = { tipo: 'string', confianca: 'number', titulo: 'string', inicio: 'string', diaInteiro: 'boolean', resumo: 'string' };
+  const tipos = {
+    resumo: 'string', marcador: 'string', confiancaMarcador: 'number',
+    tipo: 'string', confianca: 'number', titulo: 'string', inicio: 'string', diaInteiro: 'boolean',
+  };
   for (const [k, t] of Object.entries(tipos)) if (typeof r[k] !== t) return { erro: `campo ${k} ausente ou inválido` };
   for (const k of ['fim', 'local', 'linkOnline']) if (r[k] !== null && typeof r[k] !== 'string') return { erro: `campo ${k} inválido` };
   if (!TIPOS.includes(r.tipo)) return { erro: 'tipo fora da lista: ' + r.tipo };
   if (!(r.confianca >= 0 && r.confianca <= 1)) return { erro: 'confianca fora de 0 a 1' };
+  if (!(r.confiancaMarcador >= 0 && r.confiancaMarcador <= 1)) return { erro: 'confiancaMarcador fora de 0 a 1' };
   return { r };
 };
 
@@ -109,6 +121,7 @@ const itens = $input.all();
 const out = [];
 for (let i = 0; i < itens.length; i++) {
   const { requisicaoIA, ...origem } = $('Preparar').itemMatching(i).json;
+  const permitidos = requisicaoIA.generationConfig.responseSchema.properties.marcador.enum;
   const item = {
     ...origem, modo, modeloIA: cfg.modeloIA,
     tipo: '', confianca: '', titulo: '', inicio: '', fim: '', diaInteiro: '',
@@ -116,6 +129,7 @@ for (let i = 0; i < itens.length; i++) {
   };
   const v = validarResposta(itens[i].json);
   if (v.erro) {
+    // Sem resposta da IA, só aplica o marcador da regra; os outros esperam a nova tentativa.
     out.push({ json: { ...item, status: v.cota ? 'ERRO_COTA_IA' : 'ERRO_IA', motivo: v.erro }, pairedItem: { item: i } });
     continue;
   }
@@ -125,10 +139,14 @@ for (let i = 0; i < itens.length; i++) {
   r.local = r.local ? r.local.trim().slice(0, 200) : null;
   const link = r.linkOnline ? r.linkOnline.trim() : '';
   r.linkOnline = /^https:\/\//.test(link) && !/••|\[número oculto\]/.test(link) && String(origem.corpo).includes(link) ? link : null;
-  Object.assign(item, { tipo: r.tipo, confianca: r.confianca, titulo: r.titulo, inicio: r.inicio, fim: r.fim || '', diaInteiro: r.diaInteiro });
+  Object.assign(item, { resumo: r.resumo, tipo: r.tipo, confianca: r.confianca, titulo: r.titulo, inicio: r.inicio, fim: r.fim || '', diaInteiro: r.diaInteiro });
+  if (origem.origemMarcador !== 'REGRA') {
+    const daIA = permitidos.includes(r.marcador) && r.confiancaMarcador >= limiar;
+    Object.assign(item, daIA ? marcar(r.marcador, 'IA') : marcar(REVISAR, 'PADRAO'));
+  }
 
   if (r.tipo === 'NENHUM') {
-    out.push({ json: { ...item, status: 'SEM_EVENTO', motivo: r.resumo.slice(0, 300) }, pairedItem: { item: i } });
+    out.push({ json: { ...item, status: 'SEM_EVENTO', motivo: 'sem compromisso' }, pairedItem: { item: i } });
     continue;
   }
   if (r.confianca < limiar) {

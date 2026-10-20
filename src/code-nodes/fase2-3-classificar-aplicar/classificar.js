@@ -19,7 +19,7 @@ const REGRAS = [
   R('DOC-02', '10-PESSOAL/Documentos', 'PROTEGIDO', { from: /celepar\.pr\.gov\.br/ }),
   R('SAU-01', '10-PESSOAL/Saúde', 'PROTEGIDO', { from: /unimed/ }),
   R('TRB-01', '20-TRABALHO/Projetos', 'PROTEGIDO', { from: /cieepr\.org\.br|greenhouse-mail\.io/ }),
-  R('SIS-01', '40-NOTIFICACOES/Sistemas', 'MANTER', { subject: /^\[Gmail\] Diagn[oó]stico/ }),
+  R('SIS-01', '40-NOTIFICACOES/Sistemas', 'MANTER', { subject: /^\[Gmail\] (Diagn[oó]stico|Resumo)/ }),
   R('SOC-01', '40-NOTIFICACOES/Redes sociais', 'MANTER', { from: /service\.tiktok\.com|linkedin\.com|facebookmail\.com/ }),
   R('SOC-02', '40-NOTIFICACOES/Redes sociais', 'MANTER', { categoria: 'SOCIAL' }, 'MEDIA'),
   R('FER-01', '40-NOTIFICACOES/Ferramentas', 'MANTER', { from: /noreply@github\.com|discord\.com|steampowered\.com|strava\.com|drive-shares-dm-noreply@google\.com/ }),

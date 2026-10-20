@@ -1,16 +1,16 @@
-// Nó n8n: "Filtrar novas" (workflow gmail-sync-agenda.json; gerado por scripts/extract-code-nodes.js, não edite aqui)
-// Escolhe os e-mails que ainda não foram processados, com base no histórico da aba agenda.
+// Nó n8n: "Filtrar novas" (workflow gmail-sync.json; gerado por scripts/extract-code-nodes.js, não edite aqui)
+// Escolhe os e-mails que ainda não foram processados, com base no histórico da aba emails_novos.
 // APLICAR só considera linhas APLICAR; DRY_RUN considera qualquer modo, para não reenviar o mesmo e-mail à IA.
 // Erros contam tentativas por modo (máximo 3). ERRO_COTA_IA não conta: é só falta de cota do Gemini.
 const cfg = $('Config').first().json;
 const modo = cfg.modo === 'APLICAR' ? 'APLICAR' : 'DRY_RUN';
-const FINAIS = ['CRIADO', 'SIMULADO', 'DUPLICADO', 'SEM_EVENTO', 'REVISAR', 'IGNORADO_PRIVACIDADE', 'IGNORADO_CONVITE'];
+const FINAIS = ['CRIADO', 'SIMULADO', 'DUPLICADO', 'SEM_EVENTO', 'REVISAR', 'SEM_RESUMO', 'IGNORADO_PRIVACIDADE', 'IGNORADO_CONVITE'];
 const ERROS = ['ERRO_LEITURA', 'ERRO_IA', 'ERRO_AGENDA'];
 const MAX_TENTATIVAS = 3;
 
 const processadas = new Set();
 const erros = {};
-for (const { json: l } of $('Ler aba agenda').all()) {
+for (const { json: l } of $('Ler histórico').all()) {
   if (!l || !l.messageId) continue;
   const id = String(l.messageId);
   const status = String(l.status || '');

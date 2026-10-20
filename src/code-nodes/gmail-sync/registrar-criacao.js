@@ -1,4 +1,4 @@
-// Nó n8n: "Registrar criação" (workflow gmail-sync-agenda.json; gerado por scripts/extract-code-nodes.js, não edite aqui)
+// Nó n8n: "Registrar criação" (workflow gmail-sync.json; gerado por scripts/extract-code-nodes.js, não edite aqui)
 // Registra a confirmação do Google Agenda: CRIADO só quando a API devolve o evento criado.
 const itens = $input.all();
 const out = [];

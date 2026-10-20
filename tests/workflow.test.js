@@ -135,7 +135,7 @@ test('cota: gmail-sync fica em até 500 unidades/min e, somado à Fase 2/3, abai
     const { batchSize, batchInterval } = workflow.nodes.find(n => n.name === no).parameters.options.batching.batch;
     return (batchSize / (batchInterval / 1000)) * 60 * 5;
   };
-  const sync = require('../workflows/gmail-sync-agenda.json');
+  const sync = require('../workflows/gmail-sync.json');
   const fase23 = require('../workflows/fase2-3-classificar-aplicar.json');
   const leitura = unidadesPorMinuto(sync, 'Buscar e-mail') + 5; // + 5 da listagem
   assert.ok(leitura <= 500, `gmail-sync gastaria ${Math.round(leitura)} unidades/min`);
