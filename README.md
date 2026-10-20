@@ -133,7 +133,7 @@ O CI (GitHub Actions) valida a cada push que:
 │   ├── gmail-sync.json                # e-mails novos: resumo, marcador e agenda (Gemini)
 │   └── gmail-relatorios.json          # resumo diário, semanal e mensal por e-mail
 ├── src/code-nodes/                    # JS dos nós Code, legível para revisão
-├── tests/                             # testes de segurança e lógica (57)
+├── tests/                             # testes de segurança e lógica (58)
 ├── scripts/extract-code-nodes.js      # sincroniza src/ a partir do JSON
 ├── docs/
 │   ├── playbook-fase1.pdf             # guia de implementação do zero

@@ -96,6 +96,7 @@ const cfg = $('Config').first().json;
 const aplicar = cfg.modo === 'APLICAR';
 const fuso = cfg.fuso || 'America/Sao_Paulo';
 const maxCaracteres = Number(cfg.maxCaracteres) || 8000;
+const inicioEm = Date.parse(cfg.inicioEm);
 const ignorados = String(cfg.remetentesIgnorados || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
 const idPorNome = Object.fromEntries(($('Listar labels').first().json.labels || []).map(l => [l.name, l.id]));
 const marcar = (marcador, origemMarcador) => {
@@ -174,6 +175,8 @@ for (let i = 0; i < itens.length; i++) {
   const email = (mm ? mm[1] : de).trim().toLowerCase();
   const assunto = header(hs, 'Subject');
   const epoch = Number(j.internalDate);
+  // A busca já usa after:, mas o Gmail às vezes devolve e-mails anteriores; estes ficam de fora sem registro.
+  if (epoch < inicioEm) continue;
   const m = {
     email,
     assuntoOriginal: assunto,

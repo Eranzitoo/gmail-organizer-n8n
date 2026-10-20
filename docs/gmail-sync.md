@@ -32,7 +32,7 @@ As garantias do projeto continuam valendo:
 | 7 | Buscar e-mail | `GET /messages/{id}?format=full` | 1 a cada 800 ms (~375 unidades/min) |
 | 8 | Preparar | Code | Regras da Fase 2/3, filtros de privacidade, mascaramento e requisição ao Gemini |
 | 9 | Enviar à IA? | If | Promoções, newsletters, convites, alertas e erros seguem sem IA |
-| 10 | Classificar com IA | `POST generativelanguage.googleapis.com/v1beta/models/{modelo}:generateContent` | Resumo, marcador e compromisso num JSON de esquema fixo; 1 chamada a cada 7 s |
+| 10 | Classificar com IA | `POST generativelanguage.googleapis.com/v1beta/models/{modelo}:generateContent` | Resumo, marcador e compromisso num JSON de esquema fixo; 1 chamada a cada 15 s, sem nova tentativa imediata |
 | 11 | Decidir | Code | Valida a resposta, escolhe o marcador, normaliza datas e monta o evento |
 | 12 | Agrupar por marcador | Code | Só em `APLICAR`: uma chamada por marcador |
 | 13 | Aplicar marcadores | `POST /messages/batchModify` | Só `addLabelIds` |
@@ -60,7 +60,7 @@ As garantias do projeto continuam valendo:
    | Google Sheets account | Google Sheets OAuth2 | planilhas | a mesma das outras fases |
 
    Confira na tela de consentimento do Google que cada credencial pede só o escopo da tabela. Isso não dá para verificar por teste, porque o escopo fica na credencial do n8n, fora do JSON.
-5. **Modelo.** `modeloIA` vem como `gemini-flash-latest`, que aponta para o Flash mais recente. Para fixar uma versão, use o nome exato de um modelo com cota gratuita no seu projeto (*AI Studio → Rate limits*).
+5. **Modelo.** `modeloIA` vem como `gemini-flash-lite-latest`, que aponta para o Flash-Lite mais recente: é o que tem a maior cota no plano gratuito e resume bem. Para mais qualidade, troque por `gemini-flash-latest`, sabendo que a cota gratuita dele é menor. Confira os limites do seu projeto em *AI Studio → Rate limits*.
 
 ### Campos do `Config` (gmail-sync)
 
@@ -71,7 +71,7 @@ As garantias do projeto continuam valendo:
 | `query` | `newer_than:2d -in:sent -in:drafts -in:chats` | Janela de busca a cada execução |
 | `maxEmails` | 30 | E-mails processados por execução |
 | `maxCaracteres` | 8000 | Tamanho máximo do corpo enviado à IA |
-| `modeloIA` | `gemini-flash-latest` | Modelo do Gemini |
+| `modeloIA` | `gemini-flash-lite-latest` | Modelo do Gemini |
 | `limiarConfianca` | 0.8 | Abaixo disso, o marcador da IA vira `03-REVISAR` e o compromisso vira `REVISAR` |
 | `duracaoPadraoMin` | 60 | Duração do evento quando o e-mail não diz o término |
 | `calendarId` | `COLE_AQUI_O_ID_DA_AGENDA` | Agenda dedicada |
@@ -99,14 +99,14 @@ A lista que a IA pode escolher é a dos marcadores das regras mais `03-REVISAR`.
 | `IGNORADO_PRIVACIDADE` | Alerta de segurança (regras `SEG-*`) ou remetente em `remetentesIgnorados`: só recebe o marcador | Não |
 | `IGNORADO_CONVITE` | Convite `.ics` ou aviso do próprio Google Agenda: só recebe o marcador | Não |
 | `ERRO_LEITURA`, `ERRO_IA`, `ERRO_AGENDA` | Falha na leitura, na IA ou no Calendar | Sim, até 3 tentativas por modo |
-| `ERRO_COTA_IA` | A cota gratuita do Gemini acabou | Sim, sem limite, enquanto o e-mail estiver na janela da busca |
+| `ERRO_COTA_IA` | O Gemini recusou por cota (429) ou ficou instável (5xx, conexão abortada, tempo esgotado) | Sim, sem gastar tentativa, enquanto o e-mail estiver na janela da busca |
 
 A coluna `statusMarcador` diz o que aconteceu com o marcador: `SIMULADO` (DRY_RUN), `PENDENTE` (enviado ao Gmail; a confirmação fica na aba `aplicacoes`) ou `ERRO: marcador não existe no Gmail`.
 
 ## Cotas
 
 - **Gmail:** no máximo ~380 unidades/min de leitura, mais uma chamada `batchModify` por marcador. Somado à Fase 2/3 fica abaixo de 2.500, mas **não rode junto com a Fase 1**.
-- **Gemini:** 1 chamada a cada 7 s (~8,5 por minuto), só para os e-mails que não são promoção nem newsletter. Os limites diários do plano gratuito mudam com frequência; quando acabam, o e-mail fica como `ERRO_COTA_IA` e é tentado de novo nas próximas execuções.
+- **Gemini:** 1 chamada a cada 15 s (4 por minuto), só para os e-mails que não são promoção nem newsletter. O nó não repete na hora, porque repetir dentro do mesmo minuto só gera mais recusas: o e-mail fica como `ERRO_COTA_IA` e volta na execução seguinte, 30 minutos depois. Com 30 e-mails para a IA, uma execução leva cerca de 7,5 minutos.
 
 ## Teste manual
 

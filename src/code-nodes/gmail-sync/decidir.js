@@ -1,7 +1,8 @@
 // Nó n8n: "Decidir" (workflow gmail-sync.json; gerado por scripts/extract-code-nodes.js, não edite aqui)
 // A IA só sugere; quem decide são as regras abaixo.
 // Marcador: o da regra, se houver; senão o da IA com confiança suficiente; senão 03-REVISAR.
-// Evento: resposta inválida vira ERRO_IA, falta de cota vira ERRO_COTA_IA, NENHUM vira SEM_EVENTO,
+// Evento: resposta inválida vira ERRO_IA, falta de cota ou instabilidade do Gemini vira ERRO_COTA_IA
+// (tentado de novo sem gastar tentativa), NENHUM vira SEM_EVENTO,
 // e confiança baixa ou data impossível vira REVISAR. Só o que passa em tudo é apto.
 const cfg = $('Config').first().json;
 const modo = cfg.modo === 'APLICAR' ? 'APLICAR' : 'DRY_RUN';
@@ -22,7 +23,8 @@ const validarResposta = resp => {
   if (!resp || resp.error) {
     const e = (resp && resp.error) || {};
     const msg = String(e.message || e.description || JSON.stringify(e)).slice(0, 300);
-    const cota = /429|RESOURCE_EXHAUSTED|quota|too many requests/i.test(JSON.stringify(e));
+    const cota = /\b(429|500|502|503|504)\b|RESOURCE_EXHAUSTED|UNAVAILABLE|quota|too many requests|unavailable|aborted|timed? ?out|ECONNRESET|ETIMEDOUT/i
+      .test(JSON.stringify(e));
     return { erro: 'Gemini: ' + msg, cota };
   }
   if (resp.promptFeedback && resp.promptFeedback.blockReason) return { erro: 'bloqueado: ' + resp.promptFeedback.blockReason };

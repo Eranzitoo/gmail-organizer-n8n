@@ -110,7 +110,8 @@ test('segurança: o único POST ao Gemini é o Classificar com IA, com chave no 
   assert.match(n.parameters.url, /:generateContent$/);
   assert.strictEqual(n.parameters.genericAuthType, 'httpHeaderAuth', 'chave deve ir no cabeçalho, nunca na URL');
   assert.ok(!/[?&]key=/.test(n.parameters.url));
-  assert.strictEqual(n.maxTries, 3);
+  assert.ok(!n.retryOnFail, 'repetir na hora piora o 429; a nova tentativa fica para a próxima execução');
+  assert.ok(n.parameters.options.batching.batch.batchInterval >= 12000, 'Gemini gratuito aguenta poucas chamadas por minuto');
   assert.strictEqual(n.onError, 'continueRegularOutput');
   assert.ok(n.parameters.options.timeout >= 30000);
 });
@@ -253,6 +254,14 @@ test('Preparar: marcador pela regra; sem regra, a IA decide depois', () => {
   assert.strictEqual(aplicar.json.statusMarcador, 'PENDENTE');
 });
 
+test('Preparar: e-mail anterior a inicioEm fica de fora, mesmo se a busca deixar passar', () => {
+  const antigo = msg('velho', { plain: 'x' });
+  antigo.internalDate = String(Date.parse('2026-01-01T12:00:00-03:00'));
+  const out = preparar([antigo, msg('novo', { plain: 'y' })], { inicioEm: '2026-06-01T00:00:00-03:00' });
+  assert.deepStrictEqual(out.map(o => o.json.messageId), ['novo']);
+  assert.strictEqual(out[0].pairedItem.item, 1);
+});
+
 test('Preparar: convites e erros de leitura não vão para a IA', () => {
   const [convite, avisoAgenda, erro] = preparar([
     msg('1', { plain: 'convite', ics: true }),
@@ -340,7 +349,7 @@ test('Decidir: respostas ruins viram ERRO_IA e falta de cota vira ERRO_COTA_IA',
   const sem = resposta();
   delete sem.titulo;
   const out = decidir([
-    { error: { message: 'Internal error', httpCode: '500' } },
+    { error: { message: 'API key not valid', httpCode: '400' } },
     { error: { message: 'The service is receiving too many requests', httpCode: '429' } },
     { promptFeedback: { blockReason: 'SAFETY' } },
     gemini(resposta(), { finishReason: 'MAX_TOKENS' }),
@@ -349,10 +358,13 @@ test('Decidir: respostas ruins viram ERRO_IA e falta de cota vira ERRO_COTA_IA',
     gemini(resposta({ confianca: 1.5 })),
     gemini(resposta({ tipo: 'FESTA' })),
     gemini(resposta({ confiancaMarcador: -1 })),
+    { error: { message: 'Service unavailable - try again later', httpCode: '503' } },
+    { error: { message: 'The connection was aborted, perhaps the server is offline' } },
   ]);
   assert.deepStrictEqual(out.map(o => o.status), [
     'ERRO_IA', 'ERRO_COTA_IA', 'ERRO_IA', 'ERRO_IA', 'ERRO_IA', 'ERRO_IA', 'ERRO_IA', 'ERRO_IA', 'ERRO_IA',
-  ]);
+    'ERRO_COTA_IA', 'ERRO_COTA_IA',
+  ], 'instabilidade do Gemini não gasta tentativa');
   assert.ok(out.every(o => o.apto === false && o.motivo));
   assert.ok(out.every(o => !('requisicaoIA' in o)), 'requisição não deve seguir adiante');
   assert.ok(out.every(o => o.labelId === ''), 'sem resposta da IA e sem regra, o marcador espera a nova tentativa');

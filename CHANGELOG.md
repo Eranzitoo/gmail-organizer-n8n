@@ -11,6 +11,8 @@
 - Documentação em `docs/gmail-sync.md`, com riscos e mitigações em `docs/seguranca.md` e a aba `emails_novos` em `docs/planilhas.md`.
 
 ### Alterado
+- Gemini chamado 1 vez a cada 15 s e sem nova tentativa imediata, com `gemini-flash-lite-latest` como padrão: no primeiro teste, o ritmo anterior gerou recusas por cota. Recusas por cota e instabilidade (429, 5xx, conexão abortada) viram `ERRO_COTA_IA` e voltam na próxima execução sem gastar tentativa.
+- O gmail-sync descarta e-mails anteriores a `inicioEm` também no código, porque a busca `after:` do Gmail deixou passar alguns.
 - Regra nova `COM-01`: avisos de pedido, pagamento e entrega da Shopee e do Mercado Livre (categoria Atualizações do Gmail) vão para `40-NOTIFICACOES/Compras` e ganham resumo no gmail-sync; o marketing dessas lojas continua em `PROMO-01`.
 - Regra `SIS-01` passa a reconhecer também os relatórios `[Gmail] Resumo ...`, para que eles sejam marcados como sistema e nunca enviados à IA.
 
