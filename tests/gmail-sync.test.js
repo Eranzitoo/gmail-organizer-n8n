@@ -113,7 +113,7 @@ test('segurança: o único POST ao Gemini é o Classificar com IA, com chave no 
   assert.ok(!n.retryOnFail, 'repetir na hora piora o 429; a nova tentativa fica para a próxima execução');
   assert.ok(n.parameters.options.batching.batch.batchInterval >= 12000, 'Gemini gratuito aguenta poucas chamadas por minuto');
   assert.strictEqual(n.onError, 'continueRegularOutput');
-  assert.ok(n.parameters.options.timeout >= 30000);
+  assert.ok(n.parameters.options.timeout >= 10000 && n.parameters.options.timeout <= 20000, 'tempo limite curto para a execução terminar antes da próxima');
 });
 
 test('cota do Gemini: no máximo 5 chamadas por minuto, mesmo com execuções seguidas', () => {
@@ -122,8 +122,11 @@ test('cota do Gemini: no máximo 5 chamadas por minuto, mesmo com execuções se
   const gatilho = wf.nodes.find(n => n.type === 'n8n-nodes-base.scheduleTrigger').parameters.rule.interval[0];
   assert.ok(maxIA >= 1 && maxIA <= 5, `maxIA = ${maxIA}`);
   assert.ok(batchInterval >= 12000, 'no máximo 5 chamadas dentro de um minuto');
-  const duracaoMs = (maxIA - 1) * batchInterval + 60000; // última chamada pode levar até o timeout
-  assert.ok(gatilho.field === 'minutes' && gatilho.minutesInterval * 60000 >= duracaoMs, 'execuções não podem se sobrepor');
+  // Pior caso: toda chamada esgota o tempo limite. Mais 30 s para Gmail, planilha e Calendar.
+  const { timeout } = byName('Classificar com IA').parameters.options;
+  const piorCasoMs = (maxIA - 1) * batchInterval + maxIA * timeout + 30000;
+  assert.ok(gatilho.field === 'minutes' && gatilho.minutesInterval * 60000 > piorCasoMs,
+    `execução pode durar ${piorCasoMs / 1000} s e se sobrepor à próxima`);
 });
 
 test('regras: as mesmas da Fase 2/3, e a IA nunca escolhe a quarentena', () => {
