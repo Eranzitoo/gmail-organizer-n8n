@@ -17,14 +17,15 @@ Regras determinísticas derivadas do diagnóstico de 3.070 e-mails. A **primeira
 | DOC-02 | Celepar (governo do Paraná) | 10-PESSOAL/Documentos | PROTEGIDO | ALTA |
 | SAU-01 | Unimed | 10-PESSOAL/Saúde | PROTEGIDO | ALTA |
 | TRB-01 | CIEE / Greenhouse (estágio e processos seletivos) | 20-TRABALHO/Projetos | PROTEGIDO | ALTA |
-| SIS-01 | Assunto "[Gmail] Diagnóstico" | 40-NOTIFICACOES/Sistemas | MANTER | ALTA |
+| SIS-01 | Assunto "[Gmail] Diagnóstico" ou "[Gmail] Resumo" (relatórios do próprio sistema) | 40-NOTIFICACOES/Sistemas | MANTER | ALTA |
 | SOC-01 | TikTok / LinkedIn / Facebook | 40-NOTIFICACOES/Redes sociais | MANTER | ALTA |
 | SOC-02 | Categoria Social do Gmail | 40-NOTIFICACOES/Redes sociais | MANTER | MÉDIA |
 | FER-01 | GitHub / Discord / Steam / Strava / compartilhamentos do Drive | 40-NOTIFICACOES/Ferramentas | MANTER | ALTA |
+| COM-01 | Shopee / Mercado Livre na categoria Atualizações do Gmail (pedido, pagamento, entrega) | 40-NOTIFICACOES/Compras | MANTER | ALTA |
 | NEWS-01 | Codecademy / Codédex / Curso em Vídeo / TryHackMe / OpenAI / the news | 30-NEWSLETTERS/Ler-depois | MANTER | ALTA |
 | NEWS-02 | Dribbble / Spline | 30-NEWSLETTERS/Ler-depois | MANTER | ALTA |
 | VAG-01 | Alertas de vagas: Catho / Infojobs / Netvagas | 30-NEWSLETTERS/Ler-depois | MANTER | ALTA |
-| PROMO-01 | Shop2gether / Shopee / Kaluci / Vivo / Samsung / Canva / Serasa / Econodata / Pluto TV / Mercado Livre | 30-NEWSLETTERS/Promoções | MANTER | ALTA |
+| PROMO-01 | Shop2gether / Shopee / Kaluci / Vivo / Samsung / Canva / Serasa / Econodata / Pluto TV / Mercado Livre (marketing; os avisos de compra ficam em COM-01) | 30-NEWSLETTERS/Promoções | MANTER | ALTA |
 | PROMO-03 | Sympla / Jusbrasil / AliExpress / BonifiQ / Velox Tickets / Afya (marketing) | 30-NEWSLETTERS/Promoções | MANTER | ALTA |
 | PROMO-02 | Categoria Promoções **e** cabeçalho de lista | 30-NEWSLETTERS/Promoções | MANTER | MÉDIA |
 | PADRAO | Nenhuma regra casou | 00-INBOX-ZERO/03-REVISAR | REVISAR | BAIXA |

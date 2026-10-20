@@ -11,6 +11,7 @@
 - Documentação em `docs/gmail-sync.md`, com riscos e mitigações em `docs/seguranca.md` e a aba `emails_novos` em `docs/planilhas.md`.
 
 ### Alterado
+- Regra nova `COM-01`: avisos de pedido, pagamento e entrega da Shopee e do Mercado Livre (categoria Atualizações do Gmail) vão para `40-NOTIFICACOES/Compras` e ganham resumo no gmail-sync; o marketing dessas lojas continua em `PROMO-01`.
 - Regra `SIS-01` passa a reconhecer também os relatórios `[Gmail] Resumo ...`, para que eles sejam marcados como sistema e nunca enviados à IA.
 
 ## [0.4.0] - 2026-10-20

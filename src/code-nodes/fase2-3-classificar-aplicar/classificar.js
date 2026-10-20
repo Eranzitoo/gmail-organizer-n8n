@@ -23,6 +23,7 @@ const REGRAS = [
   R('SOC-01', '40-NOTIFICACOES/Redes sociais', 'MANTER', { from: /service\.tiktok\.com|linkedin\.com|facebookmail\.com/ }),
   R('SOC-02', '40-NOTIFICACOES/Redes sociais', 'MANTER', { categoria: 'SOCIAL' }, 'MEDIA'),
   R('FER-01', '40-NOTIFICACOES/Ferramentas', 'MANTER', { from: /noreply@github\.com|discord\.com|steampowered\.com|strava\.com|drive-shares-dm-noreply@google\.com/ }),
+  R('COM-01', '40-NOTIFICACOES/Compras', 'MANTER', { from: /shopee\.com\.br|mercadolivre\.com/, categoria: 'UPDATES' }),
   R('NEWS-01', '30-NEWSLETTERS/Ler-depois', 'MANTER', { from: /codecademy\.com|codedex\.io|cursoemvideo\.com|tryhackme\.com|email\.openai\.com|thenewscc\.com\.br/ }),
   R('NEWS-02', '30-NEWSLETTERS/Ler-depois', 'MANTER', { from: /n\.dribbble\.com|mail\.spline\.design/ }),
   R('VAG-01', '30-NEWSLETTERS/Ler-depois', 'MANTER', { from: /catho\.com\.br|infojobs\.com\.br|netvagas\.com\.br/ }),

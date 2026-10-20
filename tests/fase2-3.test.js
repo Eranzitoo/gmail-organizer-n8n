@@ -16,6 +16,7 @@ const LABELS = [
   '30-NEWSLETTERS/Promoções', '40-NOTIFICACOES/Redes sociais', '40-NOTIFICACOES/Ferramentas',
   '40-NOTIFICACOES/Sistemas', '50-FINANCEIRO/Faturas', '60-SEGURANCA/Alertas', '60-SEGURANCA/Login',
   '60-SEGURANCA/Recuperacao', '99-REVISAR-EXCLUSAO', '50-FINANCEIRO/Bancos', '20-TRABALHO/Projetos',
+  '40-NOTIFICACOES/Compras',
 ].map((name, i) => ({ id: `Label_${i + 10}`, name }));
 
 const msg = (id, from, subject, labelIds = ['INBOX'], extra = []) => ({
@@ -128,6 +129,19 @@ test('pendências: bancos, vagas, estágio e marketing classificados', () => {
   assert.strictEqual(r.afyaMkt.labelSugerido, '30-NEWSLETTERS/Promoções');
   assert.strictEqual(r.afyaCob.labelSugerido, '50-FINANCEIRO/Faturas');
   assert.ok(Object.values(r).every(x => x.status === 'SIMULADO'), 'algum marcador não existe na lista de teste');
+});
+
+test('compras: avisos de pedido vão para Compras e o marketing continua em Promoções', () => {
+  const r = Object.fromEntries(classificar([
+    msg('pedido', 'Shopee <info@mail.shopee.com.br>', 'Seu pedido está a caminho', ['INBOX', 'CATEGORY_UPDATES']),
+    msg('pagamento', 'Shopee <info@mail.shopee.com.br>', 'Confirmação de pagamento', ['INBOX', 'CATEGORY_UPDATES']),
+    msg('ml', 'Mercado Livre <noreply@mercadolivre.com>', 'Seu pacote chegou', ['INBOX', 'CATEGORY_UPDATES']),
+    msg('oferta', 'Shopee <info@mail.shopee.com.br>', 'Cupons de até 50%', ['INBOX', 'CATEGORY_PROMOTIONS'], unsub),
+    msg('mlOferta', 'Mercado Livre <ofertas@a.mercadolivre.com.br>', 'Ofertas do dia', ['INBOX', 'CATEGORY_PROMOTIONS'], unsub),
+  ]).map(x => [x.messageId, x]));
+  for (const id of ['pedido', 'pagamento', 'ml']) assert.strictEqual(r[id].labelSugerido, '40-NOTIFICACOES/Compras', id);
+  assert.strictEqual(r.oferta.labelSugerido, '30-NEWSLETTERS/Promoções');
+  assert.strictEqual(r.mlOferta.labelSugerido, '30-NEWSLETTERS/Promoções');
 });
 
 test('segurança: auditoria nunca é limpa; DRY_RUN grava só na aba simulacao', () => {

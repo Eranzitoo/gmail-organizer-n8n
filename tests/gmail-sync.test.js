@@ -246,6 +246,9 @@ test('Preparar: marcador pela regra; sem regra, a IA decide depois', () => {
     assert.strictEqual(item.json.marcador, rotulo);
     assert.ok(!item.json.enviarIA && !item.json.requisicaoIA, `${rotulo} não vai para a IA`);
   }
+  const [compra] = preparar([msg('6', { from: 'Shopee <info@mail.shopee.com.br>', subject: 'Seu pedido está a caminho', plain: 'Pedido enviado', labelIds: ['INBOX', 'CATEGORY_UPDATES'] })]);
+  assert.deepStrictEqual([compra.json.marcador, compra.json.origemMarcador, compra.json.enviarIA], ['40-NOTIFICACOES/Compras', 'REGRA', true],
+    'aviso de compra recebe o marcador Compras e ganha resumo');
   const [aplicar] = preparar([msg('1', { from: 'vagas@cieepr.org.br', plain: 'x' })], { modo: 'APLICAR' });
   assert.strictEqual(aplicar.json.statusMarcador, 'PENDENTE');
 });
