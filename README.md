@@ -140,6 +140,7 @@ O CI (GitHub Actions) valida a cada push que:
 │   ├── arquitetura.md                 # nó a nó, API, paginação, limites
 │   ├── seguranca.md                   # modelo de ameaças e escopos
 │   ├── planilhas.md                   # esquema das planilhas
+│   ├── privacidade.md                 # política de privacidade (tela de consentimento do Google)
 │   ├── gmail-sync.md                  # e-mails novos e relatórios: configuração e teste
 │   └── regras.md                      # regras de classificação
 └── .github/workflows/ci.yml
