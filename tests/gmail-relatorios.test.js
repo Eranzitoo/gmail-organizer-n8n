@@ -44,17 +44,18 @@ test('segurança: Codificar e-mail é o mesmo da Fase 1 (destinatário = dono da
   assert.strictEqual(code('Codificar e-mail'), fase1.nodes.find(n => n.name === 'Codificar e-mail').parameters.jsCode);
 });
 
-test('gatilhos: diário às 22h, semanal no domingo e mensal no dia 1, todos desativados', () => {
+test('gatilhos: diário às 9h, semanal na sexta às 15h e mensal no dia 1, todos desativados', () => {
   const gatilhos = Object.fromEntries(wf.nodes.filter(n => n.type === 'n8n-nodes-base.scheduleTrigger')
     .map(n => [n.name, { ...n.parameters.rule.interval[0], disabled: n.disabled }]));
-  assert.deepStrictEqual(Object.keys(gatilhos).sort(), ['Todo dia 1, 8h', 'Todo dia, 22h', 'Todo domingo, 22h']);
+  assert.deepStrictEqual(Object.keys(gatilhos).sort(), ['Toda sex, 15h', 'Todo dia 1, 8h', 'Todo dia, 9h']);
   assert.ok(Object.values(gatilhos).every(g => g.disabled === true), 'gatilhos precisam vir desativados');
-  assert.strictEqual(gatilhos['Todo dia, 22h'].triggerAtHour, 22);
-  assert.deepStrictEqual(gatilhos['Todo domingo, 22h'].triggerAtDay, [0]);
+  assert.strictEqual(gatilhos['Todo dia, 9h'].triggerAtHour, 9);
+  assert.deepStrictEqual(gatilhos['Toda sex, 15h'].triggerAtDay, [5]);
+  assert.strictEqual(gatilhos['Toda sex, 15h'].triggerAtHour, 15);
   assert.strictEqual(gatilhos['Todo dia 1, 8h'].triggerAtDayOfMonth, 1);
   assert.strictEqual(wf.settings.timezone, 'America/Sao_Paulo');
   const periodo = byName('Config').parameters.assignments.assignments.find(a => a.name === 'periodo').value;
-  assert.match(periodo, /\$\('Todo domingo, 22h'\)\.isExecuted \? 'semanal'/);
+  assert.match(periodo, /\$\('Toda sex, 15h'\)\.isExecuted \? 'semanal'/);
   assert.match(periodo, /\$\('Todo dia 1, 8h'\)\.isExecuted \? 'mensal'/);
 });
 

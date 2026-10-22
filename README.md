@@ -91,7 +91,7 @@ O escopo `https://mail.google.com/`, único que permite exclusão permanente, **
 Para o que chega daqui em diante (a partir de `inicioEm`), dois workflows trabalham juntos:
 
 - **gmail-sync** (a cada 3 min, até 5 chamadas ao Gemini por execução): aplica o marcador certo, pede ao **Gemini** um resumo curto e, se o e-mail traz um compromisso com data, cria o evento numa agenda dedicada do Google Agenda.
-- **gmail-relatorios**: manda para o seu e-mail um resumo **diário** (22h), **semanal** (domingo, 22h) e **mensal** (dia 1, 8h), com os resumos, os compromissos, a contagem por marcador, as promoções por remetente e o que ficou para revisar.
+- **gmail-relatorios**: manda para o seu e-mail um resumo **diário** (9h), **semanal** (sexta, 15h) e **mensal** (dia 1, 8h), com os resumos, os compromissos, a contagem por marcador, as promoções por remetente e o que ficou para revisar.
 
 - **Regras antes da IA.** As regras da Fase 2/3 decidem o marcador quando casam; o Gemini só escolhe no resto, de uma lista fechada e sem a quarentena, e com pouca certeza o e-mail vai para `03-REVISAR`.
 - **Privacidade antes da IA.** Promoções, newsletters e alertas de segurança não vão para o Gemini, e cartão, CPF, linha digitável e códigos são mascarados.

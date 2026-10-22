@@ -14,7 +14,8 @@ for (const i of itens) (secoes[i.secao] ||= []).push(i);
 const valor = (sec, item) => ((secoes[sec] || []).find(i => i.item === item) || {}).quantidade ?? 0;
 const num = n => typeof n === 'number' ? n.toLocaleString('pt-BR') : esc(n);
 
-const cor = { texto: '#1f2937', suave: '#6b7280', borda: '#e5e7eb', fundo: '#f3f4f6', zebra: '#f9fafb', destaque: '#2563eb', alerta: '#b00020' };
+// Tema escuro, letras claras e grandes (mesmo visual do Eranzito Brain).
+const cor = { texto: '#f1f5fb', suave: '#a9b8cf', borda: '#26375a', fundo: '#0a0f1a', cartao: '#0f1726', painel: '#16223a', linha: '#111b2e', zebra: '#16223a', destaque: '#5eead4', cabecalho: '#10284a', alerta: '#fb7185', alertaFundo: '#2a1418' };
 const fonte = 'font-family:Arial,Helvetica,sans-serif';
 const quando = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 const incompleto = itens.some(i => i.secao === 'COBERTURA' && /^(Fora do limite|Falhas)/.test(i.item) && i.quantidade > 0);
@@ -25,45 +26,45 @@ const cartoes = [
   ['Não lidos', valor('RESUMO', 'Não lidos')],
   ['Sem marcador', valor('RESUMO', 'Sem label do usuário')],
   ['Newsletters', valor('RESUMO', 'Newsletters / listas')],
-].map(([rotulo, n]) => `<td width="25%" style="padding:4px">`
-  + `<div style="background:#ffffff;border:1px solid ${cor.borda};border-radius:8px;padding:12px 6px;text-align:center">`
-  + `<div style="font-size:22px;font-weight:bold;color:${cor.texto}">${num(n)}</div>`
-  + `<div style="font-size:12px;color:${cor.suave};margin-top:2px">${rotulo}</div></div></td>`).join('');
+].map(([rotulo, n]) => `<td width="25%" style="padding:5px">`
+  + `<div style="background:${cor.painel};border:1px solid ${cor.borda};border-top:3px solid ${cor.destaque};border-radius:10px;padding:16px 6px;text-align:center">`
+  + `<div style="font-size:30px;font-weight:bold;color:${cor.texto}">${num(n)}</div>`
+  + `<div style="font-size:14px;color:${cor.suave};margin-top:6px">${rotulo}</div></div></td>`).join('');
 
 // Detalhes no formato "30.5%" ganham uma barra proporcional
 const barra = detalhe => {
   const m = /^(\d+(?:\.\d+)?)%$/.exec(String(detalhe));
   if (!m) return esc(detalhe);
   const p = Math.min(Number(m[1]), 100);
-  return `<div style="font-size:11px;color:${cor.suave}">${esc(detalhe)}</div>`
-    + `<div style="background:${cor.fundo};border-radius:3px;height:6px;margin-top:3px">`
-    + `<div style="background:${cor.destaque};border-radius:3px;height:6px;width:${p}%"></div></div>`;
+  return `<div style="font-size:13px;color:${cor.suave}">${esc(detalhe)}</div>`
+    + `<div style="background:${cor.fundo};border-radius:4px;height:8px;margin-top:4px">`
+    + `<div style="background:${cor.destaque};border-radius:4px;height:8px;width:${p}%"></div></div>`;
 };
 
-const tabela = (sec, lista) => `<h3 style="${fonte};font-size:15px;color:${cor.texto};margin:24px 0 8px">${esc(titulos[sec] || sec)}</h3>`
-  + `<table width="100%" cellpadding="0" cellspacing="0" style="${fonte};font-size:13px;border-collapse:collapse;border:1px solid ${cor.borda}">`
-  + `<tr style="background:${cor.fundo};color:${cor.suave};font-size:11px;text-transform:uppercase">`
-  + `<th align="left" style="padding:8px">Item</th><th align="right" style="padding:8px">Qtd</th><th align="left" style="padding:8px;width:35%">Detalhe</th></tr>`
-  + lista.map((i, n) => `<tr style="background:${n % 2 ? cor.zebra : '#ffffff'};border-top:1px solid ${cor.borda}">`
-    + `<td style="padding:7px 8px;color:${cor.texto};word-break:break-all">${esc(i.item)}</td>`
-    + `<td align="right" style="padding:7px 8px;color:${cor.texto};font-weight:bold;white-space:nowrap">${num(i.quantidade)}</td>`
-    + `<td style="padding:7px 8px;color:${cor.suave}">${barra(i.detalhe)}</td></tr>`).join('')
+const tabela = (sec, lista) => `<h3 style="${fonte};font-size:21px;color:${cor.texto};margin:30px 0 12px">${esc(titulos[sec] || sec)}</h3>`
+  + `<table width="100%" cellpadding="0" cellspacing="0" style="${fonte};font-size:15px;border-collapse:collapse;border:1px solid ${cor.borda}">`
+  + `<tr style="background:${cor.painel};color:${cor.destaque};font-size:12px;text-transform:uppercase;letter-spacing:.8px">`
+  + `<th align="left" style="padding:12px 14px">Item</th><th align="right" style="padding:12px 14px">Qtd</th><th align="left" style="padding:12px 14px;width:35%">Detalhe</th></tr>`
+  + lista.map((i, n) => `<tr style="background:${n % 2 ? cor.zebra : cor.linha};border-top:1px solid ${cor.borda}">`
+    + `<td style="padding:11px 14px;color:${cor.texto};word-break:break-all">${esc(i.item)}</td>`
+    + `<td align="right" style="padding:11px 14px;color:${cor.texto};font-weight:bold;white-space:nowrap">${num(i.quantidade)}</td>`
+    + `<td style="padding:11px 14px;color:${cor.suave}">${barra(i.detalhe)}</td></tr>`).join('')
   + `</table>`;
 
-let html = `<div style="background:${cor.fundo};padding:16px 0">`
-  + `<table align="center" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border-radius:10px;${fonte}">`
-  + `<tr><td style="background:${cor.destaque};border-radius:10px 10px 0 0;padding:20px 24px;color:#ffffff">`
-  + `<div style="font-size:20px;font-weight:bold">📬 Diagnóstico do Gmail</div>`
-  + `<div style="font-size:13px;opacity:0.9;margin-top:4px">Gerado em ${quando} · somente leitura, nenhuma alteração na caixa</div></td></tr>`
-  + `<tr><td style="padding:16px 20px 24px">`;
+let html = `<div style="background:${cor.fundo};padding:24px 8px">`
+  + `<table align="center" width="100%" cellpadding="0" cellspacing="0" style="max-width:900px;background:${cor.cartao};border:1px solid ${cor.borda};border-radius:18px;overflow:hidden;${fonte}">`
+  + `<tr><td style="background:${cor.cabecalho};background-image:linear-gradient(135deg,#10284a,#0f1f3d 60%,#132a3a);padding:34px 30px 30px;color:#ffffff;border-bottom:3px solid ${cor.destaque}">`
+  + `<div style="font-size:32px;line-height:40px;font-weight:bold">📬 Diagnóstico do Gmail</div>`
+  + `<div style="font-size:16px;color:#c7d5ea;margin-top:10px">Gerado em ${quando} · somente leitura, nenhuma alteração na caixa</div></td></tr>`
+  + `<tr><td style="padding:26px 24px 24px">`;
 if (incompleto) {
-  html += `<div style="background:#fdecee;border-left:4px solid ${cor.alerta};padding:10px 12px;color:${cor.alerta};font-size:13px;margin-bottom:12px">`
+  html += `<div style="background:${cor.alertaFundo};border-left:4px solid ${cor.alerta};padding:14px 16px;color:${cor.alerta};font-size:15px;margin-bottom:14px">`
     + `<b>Atenção:</b> relatório parcial. Veja a seção Cobertura da leitura.</div>`;
 }
 html += `<table width="100%" cellpadding="0" cellspacing="0"><tr>${cartoes}</tr></table>`;
 for (const [sec, lista] of Object.entries(secoes)) html += tabela(sec, lista);
 html += `</td></tr>`
-  + `<tr><td style="padding:12px 24px;border-top:1px solid ${cor.borda};font-size:11px;color:${cor.suave}">`
+  + `<tr><td style="padding:18px 30px;border-top:1px solid ${cor.borda};background:#0c1320;font-size:13px;color:${cor.suave}">`
   + `gmail-organizer-n8n · Fase 1 (diagnóstico)</td></tr></table></div>`;
 
 return [{ json: { html, assunto: `[Gmail] Diagnóstico – ${new Date().toISOString().slice(0, 10)}` } }];
