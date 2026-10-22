@@ -59,24 +59,26 @@ test('gatilhos: diário às 9h, semanal na sexta às 15h e mensal no dia 1, todo
   assert.match(periodo, /\$\('Todo dia 1, 8h'\)\.isExecuted \? 'mensal'/);
 });
 
-test('diário: só o que chegou hoje, um e-mail por linha e resumos agrupados', () => {
+test('diário: as últimas 24 horas, um e-mail por linha e resumos agrupados', () => {
   const hoje = hojeLocal();
+  const ha = horas => new Date(Date.now() - horas * 3600000).toISOString();
   const r = relatorio('diario', [
     {},
-    linha('1', instante(hoje, '23:30'), { resumo: 'Entrevista confirmada.', marcador: '20-TRABALHO/Projetos' }),
-    linha('1', instante(hoje, '23:30'), { modo: 'DRY_RUN', resumo: 'versão simulada', timestamp: '2099-01-01' }),
-    linha('2', instante(hoje, '08:00'), { status: 'SEM_RESUMO', marcador: '30-NEWSLETTERS/Promoções', remetente: 'loja@x.com' }),
-    linha('3', instante(hoje, '23:00'), { status: 'SEM_RESUMO', marcador: '30-NEWSLETTERS/Promoções', remetente: 'loja@x.com' }),
-    linha('4', instante(somaDias(hoje, -1), '23:00'), { resumo: 'de ontem' }),
-    linha('5', instante(hoje, '07:00'), { status: 'CRIADO', resumo: 'Prova.', titulo: 'Prova de cálculo', inicio: `${somaDias(hoje, 3)}T19:00:00`, linkEvento: 'https://www.google.com/calendar/event?eid=1' }),
-    linha('6', instante(hoje, '07:30'), { marcador: '00-INBOX-ZERO/03-REVISAR', resumo: 'Algo estranho.' }),
+    linha('1', ha(1), { resumo: 'Entrevista confirmada.', marcador: '20-TRABALHO/Projetos' }),
+    linha('1', ha(1), { modo: 'DRY_RUN', resumo: 'versão simulada', timestamp: '2099-01-01' }),
+    linha('2', ha(2), { status: 'SEM_RESUMO', marcador: '30-NEWSLETTERS/Promoções', remetente: 'loja@x.com' }),
+    linha('3', ha(23.5), { status: 'SEM_RESUMO', marcador: '30-NEWSLETTERS/Promoções', remetente: 'loja@x.com' }),
+    linha('4', ha(24.5), { resumo: 'fora das 24 horas' }),
+    linha('5', ha(3), { status: 'CRIADO', resumo: 'Prova.', titulo: 'Prova de cálculo', inicio: `${somaDias(hoje, 3)}T19:00:00`, linkEvento: 'https://www.google.com/calendar/event?eid=1' }),
+    linha('6', ha(4), { marcador: '00-INBOX-ZERO/03-REVISAR', resumo: 'Algo estranho.' }),
   ]);
   assert.strictEqual(r.periodo, 'diario');
-  assert.strictEqual(r.total, 5, 'e-mail repetido conta uma vez e o de ontem fica de fora');
+  assert.strictEqual(r.total, 5, 'e-mail repetido conta uma vez e o de mais de 24 horas fica de fora');
+  assert.match(r.html, /últimas 24 horas \(\d{2}\/\d{2} \d{2}h\d{2} a \d{2}\/\d{2} \d{2}h\d{2}\)/);
   assert.match(r.assunto, /^\[Gmail\] Resumo diário – \d{2}\/\d{2}\/\d{4}$/);
   assert.match(r.html, /Entrevista confirmada\./);
   assert.ok(!/versão simulada/.test(r.html), 'linha APLICAR vence a DRY_RUN');
-  assert.ok(!/de ontem/.test(r.html));
+  assert.ok(!/fora das 24 horas/.test(r.html));
   assert.match(r.html, /Compromissos na agenda[\s\S]*Prova de cálculo/);
   assert.match(r.html, /Promoções e newsletters por remetente[\s\S]*loja@x\.com[\s\S]*<strong>2<\/strong>/);
   assert.match(r.html, /RELATÓRIO DIÁRIO/);
@@ -124,7 +126,7 @@ test('período vazio e conteúdo escapado', () => {
   const vazio = relatorio('diario', [{}]);
   assert.strictEqual(vazio.total, 0);
   assert.match(vazio.html, /Nenhum e-mail novo neste período/);
-  const r = relatorio('diario', [linha('x', instante(hojeLocal()), {
+  const r = relatorio('diario', [linha('x', new Date(Date.now() - 3600000).toISOString(), {
     resumo: '<script>alert(1)</script>', assunto: '"><img src=x>', linkGmail: 'javascript:alert(1)',
   })]);
   assert.ok(!/<script>|<img src=x>|href="javascript/.test(r.html), 'HTML não escapado');

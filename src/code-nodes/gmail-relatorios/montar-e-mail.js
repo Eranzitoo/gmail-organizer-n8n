@@ -40,10 +40,13 @@ if (periodo === 'semanal') {
   fim = meiaNoite(hoje.slice(0, 8) + '01');
   rotulo = new Date(anterior + 'T12:00:00Z').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 } else {
-  inicio = meiaNoite(hoje);
-  fim = meiaNoite(somaDias(hoje, 1));
+  // Diário: as últimas 24 horas até agora, para não perder a tarde e a noite do dia anterior.
+  fim = Date.now();
+  inicio = fim - DIA;
   rotulo = br(hoje);
 }
+const diaHora = epoch => { const p = partesNoFuso(epoch, fuso); return `${p.day}/${p.month} ${p.hour}h${p.minute}`; };
+const periodoTexto = periodo === 'diario' ? `últimas 24 horas (${diaHora(inicio)} a ${diaHora(fim)})` : rotulo;
 
 // Uma linha por e-mail: prefere APLICAR, depois sucesso, depois a mais recente
 const peso = l => [l.modo === 'APLICAR' ? 1 : 0, String(l.status).startsWith('ERRO') ? 0 : 1, String(l.timestamp)];
@@ -165,7 +168,7 @@ const html = `<div style="display:none;max-height:0;overflow:hidden;opacity:0;co
   + `<tr><td style="background:${cor.cabecalho};background-image:linear-gradient(135deg,#10284a,#0f1f3d 60%,#132a3a);padding:34px 30px 30px;color:#ffffff;border-bottom:3px solid ${cor.destaque}">`
   + `<div style="font-size:13px;line-height:18px;letter-spacing:1.6px;color:${cor.destaque};font-weight:bold">RELATÓRIO ${nomes[periodo].toUpperCase()}</div>`
   + `<div style="font-size:32px;line-height:40px;font-weight:bold;margin-top:10px">Resumo do Gmail</div>`
-  + `<div style="font-size:16px;line-height:24px;color:#c7d5ea;margin-top:10px">Período ${esc(rotulo)} &nbsp;·&nbsp; E-mails recebidos após a ativação</div>`
+  + `<div style="font-size:16px;line-height:24px;color:#c7d5ea;margin-top:10px">Período ${esc(periodoTexto)} &nbsp;·&nbsp; E-mails recebidos após a ativação</div>`
   + `</td></tr>`
   + `<tr><td style="padding:26px 24px 10px">${corpo}</td></tr>`
   + `<tr><td style="border-top:1px solid ${cor.borda};background:${cor.rodape};padding:20px 30px;color:${cor.suave};font-size:13px;line-height:20px">`

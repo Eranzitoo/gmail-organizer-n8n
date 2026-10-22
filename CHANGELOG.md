@@ -5,6 +5,7 @@
 - Novo visual dos relatórios: tema escuro com letras maiores, cartões de números com uma cor por indicador, largura de 900px e texto de prévia na caixa de entrada. O cabeçalho mostra o período (diário, semanal ou mensal).
 - O e-mail do diagnóstico da Fase 1 ganhou o mesmo tema escuro.
 - Relatório diário às 9h (antes 22h) e semanal na sexta às 15h (antes domingo, 22h), como já está no n8n.
+- O relatório diário cobre as últimas 24 horas até o envio, e não mais só o dia corrente: às 9h, o dia corrente deixava de fora a tarde e a noite anteriores.
 
 ## [0.5.0] - 2026-10-20
 ### Adicionado

@@ -8,7 +8,7 @@ Dois workflows tratam **só os e-mails que chegam a partir de uma data** (`inici
   3. cria um evento numa agenda dedicada do Google Agenda quando o e-mail traz um compromisso com data;
   4. registra tudo numa linha da aba `emails_novos`.
 - [`workflows/gmail-relatorios.json`](../workflows/gmail-relatorios.json) lê a aba `emails_novos` e manda para o seu e-mail:
-  - **todo dia às 9h**, o que chegou desde a meia-noite;
+  - **todo dia às 9h**, as últimas 24 horas;
   - **toda sexta às 15h**, os últimos 7 dias;
   - **todo dia 1 às 8h**, o mês anterior (só números, sem os resumos).
 
