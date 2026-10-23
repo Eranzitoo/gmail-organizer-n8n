@@ -5,6 +5,7 @@
 - Novo visual dos relatórios: tema escuro com letras maiores, cartões de números com uma cor por indicador, largura de 900px e texto de prévia na caixa de entrada. O cabeçalho mostra o período (diário, semanal ou mensal).
 - O e-mail do diagnóstico da Fase 1 ganhou o mesmo tema escuro.
 - Relatório diário às 9h (antes 22h) e semanal na sexta às 15h (antes domingo, 22h), como já está no n8n.
+- gmail-sync a cada 60 minutos (antes 3), como já está no n8n. Com no máximo 5 resumos do Gemini por execução, e-mails além disso esperam a hora seguinte.
 - O relatório diário cobre as últimas 24 horas até o envio, e não mais só o dia corrente: às 9h, o dia corrente deixava de fora a tarde e a noite anteriores.
 
 ## [0.5.0] - 2026-10-20

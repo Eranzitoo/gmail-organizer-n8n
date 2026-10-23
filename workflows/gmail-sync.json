@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## Gmail – Sync: resumo, marcadores e agenda dos e-mails novos\n**Modo padrão: DRY_RUN** (grava na aba `emails_novos` e não altera o Gmail nem o Google Agenda).\nSó lê e-mails que chegaram depois de `inicioEm` (Config). Os relatórios ficam no workflow gmail-relatorios.\n\n**Credenciais**\n- Leitura do Gmail: **Google account** (só `gmail.readonly`).\n- **Aplicar marcadores**: **Gmail Organizar** (`gmail.modify`). Só adiciona marcadores.\n- **Classificar com IA**: credencial *Header Auth* **Gemini API**, cabeçalho `x-goog-api-key`.\n- Nós do Calendar: **Google Agenda (eventos)**, só com `calendar.events.owned`.\n- Planilha: **Google Sheets account**.\n\n**Antes da primeira execução**\n1. Ajuste `inicioEm` para a data a partir da qual quer processar.\n2. Crie uma agenda só para isto (ex.: \"Gmail – automático\") e cole o ID em `calendarId`.\n3. Crie uma aba `emails_novos` vazia na planilha de auditoria e cole o ID da planilha nos nós do Sheets.\n4. Não rode junto com a Fase 1: as duas somadas passam da cota do Gmail.\n5. Valide em DRY_RUN, mude `modo` para `APLICAR` e só então ative o gatilho **A cada 3 min**.",
+        "content": "## Gmail – Sync: resumo, marcadores e agenda dos e-mails novos\n**Modo padrão: DRY_RUN** (grava na aba `emails_novos` e não altera o Gmail nem o Google Agenda).\nSó lê e-mails que chegaram depois de `inicioEm` (Config). Os relatórios ficam no workflow gmail-relatorios.\n\n**Credenciais**\n- Leitura do Gmail: **Google account** (só `gmail.readonly`).\n- **Aplicar marcadores**: **Gmail Organizar** (`gmail.modify`). Só adiciona marcadores.\n- **Classificar com IA**: credencial *Header Auth* **Gemini API**, cabeçalho `x-goog-api-key`.\n- Nós do Calendar: **Google Agenda (eventos)**, só com `calendar.events.owned`.\n- Planilha: **Google Sheets account**.\n\n**Antes da primeira execução**\n1. Ajuste `inicioEm` para a data a partir da qual quer processar.\n2. Crie uma agenda só para isto (ex.: \"Gmail – automático\") e cole o ID em `calendarId`.\n3. Crie uma aba `emails_novos` vazia na planilha de auditoria e cole o ID da planilha nos nós do Sheets.\n4. Não rode junto com a Fase 1: as duas somadas passam da cota do Gmail.\n5. Valide em DRY_RUN, mude `modo` para `APLICAR` e só então ative o gatilho **A cada 60 min**.",
         "width": 620,
         "height": 520
       },
@@ -31,12 +31,12 @@
           "interval": [
             {
               "field": "minutes",
-              "minutesInterval": 3
+              "minutesInterval": 60
             }
           ]
         }
       },
-      "name": "A cada 3 min",
+      "name": "A cada 60 min",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
@@ -44,7 +44,7 @@
         200
       ],
       "disabled": true,
-      "notes": "Desativado: só ative depois de validar em DRY_RUN e em APLICAR. Cada execução faz no máximo 5 chamadas ao Gemini e, mesmo se todas esgotarem o tempo limite de 20 s, termina antes de 3 minutos: execuções nunca se sobrepõem."
+      "notes": "Desativado: só ative depois de validar em DRY_RUN e em APLICAR. Cada execução faz no máximo 5 chamadas ao Gemini e, mesmo se todas esgotarem o tempo limite de 20 s, termina antes de 3 minutos, bem antes da próxima execução (60 min): execuções nunca se sobrepõem."
     },
     {
       "parameters": {
@@ -692,7 +692,7 @@
         ]
       ]
     },
-    "A cada 3 min": {
+    "A cada 60 min": {
       "main": [
         [
           {

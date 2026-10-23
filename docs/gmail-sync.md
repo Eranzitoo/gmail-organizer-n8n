@@ -2,7 +2,7 @@
 
 Dois workflows tratam **só os e-mails que chegam a partir de uma data** (`inicioEm`). O acúmulo antigo continua com as Fases 1 a 3.
 
-- [`workflows/gmail-sync.json`](../workflows/gmail-sync.json) roda a cada 3 minutos, com no máximo 5 chamadas ao Gemini por execução. Para cada e-mail novo, ele:
+- [`workflows/gmail-sync.json`](../workflows/gmail-sync.json) roda a cada 60 minutos, com no máximo 5 chamadas ao Gemini por execução. Para cada e-mail novo, ele:
   1. aplica o marcador certo: as regras da Fase 2/3 decidem quando casam, e o Gemini escolhe quando nenhuma casa;
   2. pede ao **Gemini** um resumo de até 2 frases (menos promoções, newsletters, redes sociais e alertas de segurança);
   3. cria um evento numa agenda dedicada do Google Agenda quando o e-mail traz um compromisso com data;
@@ -23,7 +23,7 @@ As garantias do projeto continuam valendo:
 
 | # | Nó | Endpoint / função | Observações |
 |---|---|---|---|
-| 1 | Iniciar / A cada 3 min | Manual / Schedule Trigger | O agendado **vem desativado** |
+| 1 | Iniciar / A cada 60 min | Manual / Schedule Trigger | O agendado **vem desativado** |
 | 2 | Config | Set | Parâmetros (tabela abaixo) |
 | 3 | Ler histórico | Google Sheets (read) | Aba `emails_novos`, para não processar o mesmo e-mail duas vezes |
 | 4 | Listar labels | `GET /gmail/v1/users/me/labels` | Nome → ID dos marcadores |
@@ -107,7 +107,7 @@ A coluna `statusMarcador` diz o que aconteceu com o marcador: `SIMULADO` (DRY_RU
 ## Cotas
 
 - **Gmail:** no máximo ~380 unidades/min de leitura, mais uma chamada `batchModify` por marcador. Somado à Fase 2/3 fica abaixo de 2.500, mas **não rode junto com a Fase 1**.
-- **Gemini:** no máximo 5 chamadas por execução (`maxIA`), 1 a cada 12 s, com tempo limite de 20 s, e execuções a cada 3 minutos. Normalmente uma execução leva cerca de 1 minuto; no pior caso, com todas as chamadas esgotando o tempo limite, leva menos de 3, então duas execuções nunca rodam ao mesmo tempo (o gatilho do n8n dispara mesmo com a anterior ainda rodando) e nunca passam de 5 chamadas por minuto, o limite gratuito. Só vão para a IA os e-mails que não são promoção, newsletter, vaga, rede social nem alerta de segurança. O nó não repete na hora, porque repetir dentro do mesmo minuto só gera mais recusas: o e-mail fica como `ERRO_COTA_IA` e volta na execução seguinte. Um teste garante que esses números continuam coerentes.
+- **Gemini:** no máximo 5 chamadas por execução (`maxIA`), 1 a cada 12 s, com tempo limite de 20 s, e execuções a cada 60 minutos. Normalmente uma execução leva cerca de 1 minuto; no pior caso, com todas as chamadas esgotando o tempo limite, leva menos de 3, então duas execuções nunca rodam ao mesmo tempo (o gatilho do n8n dispara mesmo com a anterior ainda rodando) e nunca passam de 5 chamadas por minuto, o limite gratuito. Só vão para a IA os e-mails que não são promoção, newsletter, vaga, rede social nem alerta de segurança. O nó não repete na hora, porque repetir dentro do mesmo minuto só gera mais recusas: o e-mail fica como `ERRO_COTA_IA` e volta na execução seguinte. Um teste garante que esses números continuam coerentes.
 
 ## Teste manual
 
@@ -116,4 +116,4 @@ A coluna `statusMarcador` diz o que aconteceu com o marcador: `SIMULADO` (DRY_RU
 3. Rode o **gmail-relatorios** pelo **Iniciar**: chega o resumo diário, com o aviso de DRY_RUN.
 4. Mude o gmail-sync para `APLICAR` e rode: os e-mails ganham os marcadores no Gmail, a aba `aplicacoes` mostra `CONFIRMADO`, e os dois eventos aparecem na agenda dedicada, sem convidados.
 5. Rode de novo: nada é recriado. Apague um evento e rode outra vez: ele não volta.
-6. Só então ative **A cada 3 min** e publique o workflow (**Publish**) no gmail-sync e os três gatilhos do gmail-relatorios.
+6. Só então ative **A cada 60 min** e publique o workflow (**Publish**) no gmail-sync e os três gatilhos do gmail-relatorios.
